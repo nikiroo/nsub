@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include "nsub.h"
+#include "utils/utils.h"
 
 /* Declarations */
 
@@ -86,7 +87,7 @@ int nsub_read_lrc(song_t *song, char *line) {
 		line[colon] = '\0';
 		line[end] = '\0';
 		if (!strcmp("language", line + 1)) {
-			song->lang = strdup(line + text_offset);
+			song->lang = utils_strdup(line + text_offset);
 		} else {
 			song_add_meta(song, line + 1, line + text_offset);
 		}
@@ -210,7 +211,7 @@ int lrc_millisec(char *line) {
 	}
 
 	int imult = 0;
-	for (ssize_t i = end; i >= 0; i--) {
+	for (size_t i = end; 1; i--) {
 		char car = line[i];
 		int digit = (car >= '0' && car <= '9');
 
@@ -219,6 +220,9 @@ int lrc_millisec(char *line) {
 
 		if (car == '-')
 			total = -total;
+
+		if (i == 0)
+			break;
 	}
 
 	return total;

@@ -24,7 +24,6 @@
 
 #include "array.h"
 
-typedef struct array_p array;
 struct array_p {
 	size_t elem_size;
 	size_t count;

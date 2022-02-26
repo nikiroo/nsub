@@ -25,8 +25,7 @@
 #include <string.h>
 #include <strings.h>
 
-#include "array.h"
-#include "desktop.h"
+#include "utils.h"
 
 #define EXT "desktop"
 
@@ -55,7 +54,7 @@ desktop *new_desktop(const char filename[], int best_size) {
 	me->id = 0;
 
 	// Copy name
-	me->name = strdup(filename);
+	me->name = utils_strdup(filename);
 
 	// Get extension an remove ".desktop" from name
 	char *ext = rindex(me->name, '.');
@@ -66,7 +65,7 @@ desktop *new_desktop(const char filename[], int best_size) {
 			me->name[idot] = '\0';
 	}
 	if (ext)
-		ext = strdup(ext);
+		ext = utils_strdup(ext);
 
 	// If PNG of the same name, use as default icon
 	me->icon_file = desktop_find_icon(me->name, best_size);
@@ -78,7 +77,7 @@ desktop *new_desktop(const char filename[], int best_size) {
 		slash = rindex(me->name, '/');
 	}
 	if (slash) {
-		char *copy = strdup(slash + 1);
+		char *copy = utils_strdup(slash + 1);
 		free(me->name);
 		me->name = copy;
 	}
@@ -143,14 +142,14 @@ desktop *new_desktop(const char filename[], int best_size) {
 		n = strlen(startsWith);
 		if (!strncmp(line, startsWith, n)) {
 			free(me->name);
-			me->name = strdup(line + n);
+			me->name = utils_strdup(line + n);
 		}
 
 		startsWith = "Exec=";
 		n = strlen(startsWith);
 		if (!strncmp(line, startsWith, n)) {
 			free(me->exec);
-			me->exec = strdup(line + n);
+			me->exec = utils_strdup(line + n);
 			// TODO: %f %F %u %U %i %c %k: inject values instead
 			char *cars = "ifFuUck";
 			for (char *ptr = index(me->exec, '%'); ptr; ptr = index(ptr, '%')) {
@@ -166,7 +165,7 @@ desktop *new_desktop(const char filename[], int best_size) {
 		n = strlen(startsWith);
 		if (!strncmp(line, startsWith, n)) {
 			free(me->icon);
-			me->icon = strdup(line + n);
+			me->icon = utils_strdup(line + n);
 		}
 	}
 
@@ -355,17 +354,17 @@ char *desktop_find_icon(const char basename[], int icon_size) {
 			if (!strncmp(line, startsWith, n)) {
 				free(theme);
 				if (line[n] == '"') {
-					theme = strdup(line + n + 1);
+					theme = utils_strdup(line + n + 1);
 					theme[strlen(theme) - 1] = '\0';
 				} else {
-					theme = strdup(line + n);
+					theme = utils_strdup(line + n);
 				}
 			}
 		}
 
 		if (!theme || !theme[0]) {
-			theme = strdup("");
-			ltheme = strdup("");
+			theme = utils_strdup("");
+			ltheme = utils_strdup("");
 		} else {
 			tmp = theme;
 			theme = desktop_concat("/usr/share/icons/", tmp, "/", NULL);
@@ -381,7 +380,7 @@ char *desktop_find_icon(const char basename[], int icon_size) {
 		return NULL;
 
 	// exact match
-	tmp = strdup(basename);
+	tmp = utils_strdup(basename);
 	if (desktop_test_file(tmp))
 		return tmp;
 	free(tmp);

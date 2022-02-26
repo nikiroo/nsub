@@ -131,7 +131,7 @@ char *nsub_lrc_time_str(int time, int show_sign) {
 	if (h) {
 		sprintf(time_str, "%s%d:%02d:%02d.%02d", sign, h, m, s, c);
 	} else {
-		sprintf(time_str, "%s%d:%02d.%02d", sign, m, s, c);
+		sprintf(time_str, "%s%02d:%02d.%02d", sign, m, s, c);
 	}
 
 	return time_str;

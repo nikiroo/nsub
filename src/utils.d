@@ -1,4 +1,4 @@
-CFLAGS   += -Wall -I./
+CFLAGS   += -Wall -I./ -std=c99
 CXXFLAGS += -Wall -I./
 PREFIX   =  /usr/local
 

@@ -17,28 +17,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**
- * @file utils.h
- * @author Niki
- * @date 2020
- *
- * @brief Include all the other .H as well as a C99-compatible utils_strdup function.
- */
-#ifndef UTILS_H
-#define UTILS_H
+#include <string.h>
 
-#include "array.h"
-#include "desktop.h"
-#include "print.h"
-#include "timing.h"
+#include "utils.h"
 
-/**
- * A C99-compatible strdup function.
- *
- * @param source the source string to copy
- *
- * @return a new string (malloc'ed) which your are now respionsible of
- */
-char *utils_strdup(const char *source);
-
-#endif // UTILS_H
+char *utils_strdup(const char *source) {
+	size_t sz = strlen(source);
+	char *new = malloc((sz + 1) * sizeof(char));
+	strcpy(new, source);
+	return new;
+}
