@@ -22,8 +22,9 @@
 
 #include <check.h>
 
-//TODO: add tests (the code for those is not ready yet)
-//Suite *test_cstring(const char title[]);
-//Suite *test_cstring_more(const char title[]);
+Suite *test_cstring(const char title[]);
+Suite *test_cstring_more(const char title[]);
+Suite *test_array(const char title[]);
+Suite *test_array_more(const char title[]);
 
 #endif /* SRC_TESTS_UTILS_MAIN_H_ */

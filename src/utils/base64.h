@@ -1,7 +1,7 @@
 /*
  * CUtils: some small C utilities
  *
- * Copyright (C) 2022 Niki Roo
+ * Copyright (C) 2013 Niki Roo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,28 +17,44 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "main.h"
-#include "launcher.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-SRunner *runner = NULL;
-void add_test(Suite *test);
+#ifndef BASE64_H
+#define BASE64_H
 
-SRunner *get_tests(int more) {
-	add_test(test_cstring("cstring"));
-	if (more)
-		add_test(test_cstring_more("cstring -- more (longer)"));
+#include <stdlib.h>
+#include "cstring.h"
 
-	add_test(test_array("array"));
-	if (more)
-		add_test(test_array_more("array -- more (longer)"));
+typedef struct {
+	char *table;
+} base64;
 
-	return runner;
+/**
+ * Create a new base64 codec.
+ *
+ * @return a new codec
+ */
+base64 *base64_new();
+
+/**
+ * Free the given code.
+ */
+void base64_free(base64 *self);
+
+cstring *base64_encode(base64 *self, cstring *data);
+
+cstring *base64_decode(base64 *self, cstring *data);
+
+cstring *base64_encodes(base64 *self, char *data);
+
+cstring *base64_encodesi(base64 *self, char *data, size_t size);
+
+cstring *base64_decodes(base64 *self, char *data);
+
+#endif
+
+#ifdef __cplusplus
 }
-
-void add_test(Suite *test) {
-	if (!runner) {
-		runner = srunner_create(test);
-	} else {
-		srunner_add_suite(runner, test);
-	}
-}
+#endif

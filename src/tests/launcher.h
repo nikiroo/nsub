@@ -15,19 +15,19 @@ END_TEST\
 #define FAIL(...) \
 ck_abort_msg(__VA_ARGS__)\
 
-#define ASSERT_EQUALS_STR(title, un, deux) \
-	if (strcmp(un, deux)) { \
-ck_abort_msg("%s\n\tExpected: <%s>\n\tReceived: <%s>", title, un, deux); \
+#define ASSERT_EQUALS_STR(title, expected, received) \
+	if (strcmp(expected, received)) { \
+ck_abort_msg("%s\n\tExpected: <%s>\n\tReceived: <%s>", title, expected, received); \
 }
 
-#define ASSERT_EQUALS_INT(title, un, deux) \
-	if (un != deux) { \
-ck_abort_msg("%s\n\tExpected: %d\n\tReceived: %d", title, un, deux); \
+#define ASSERT_EQUALS_INT(title, expected, received) \
+	if (expected != received) { \
+ck_abort_msg("%s\n\tExpected: %d\n\tReceived: %d", title, expected, received); \
 }
 
-#define ASSERT_EQUALS_SIZE(title, un, deux) \
-	if (un != deux) { \
-ck_abort_msg("%s\n\tExpected: %zu\n\tReceived: %zu", title, un, deux); \
+#define ASSERT_EQUALS_SIZE(title, expected, received) \
+	if (expected != received) { \
+ck_abort_msg("%s\n\tExpected: %zu\n\tReceived: %zu", title, expected, received); \
 }
 
 SRunner *get_tests(int more);

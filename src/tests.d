@@ -2,7 +2,6 @@
 
 CFLAGS   += -Wall -pedantic -I./ -I ../ -std=c99
 CXXFLAGS += -Wall -pedantic -I./ -I ../
-LDFLAGS  += -lcheck
 
 ifdef DEBUG
 CFLAGS   += -ggdb -O0
