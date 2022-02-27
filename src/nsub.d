@@ -7,7 +7,7 @@ CFLAGS   += -ggdb -O0
 CXXFLAGS += -ggdb -O0
 endif
 
-.PHONY: all install uninstall clean mrpropre mrpropre debug
+.PHONY: all install uninstall clean mrpropre mrpropre 
 
 all: ../bin/nsub
 
@@ -32,9 +32,6 @@ HEADERS=$(wildcard nsub/*.h)
 ../bin/nsub: $(SOURCES) $(HEADERS) ../bin/libutils.o
 	$(CC) $(CFLAGS) $^ -o $@
 
-debug:
-	$(MAKE) -f nsub.d DEBUG=1
-
 clean:
 	rm -f nsub/*.o
 
@@ -42,11 +39,12 @@ mrproper: mrpropre
 
 mrpropre: clean
 	rm -f ../bin/nsub
+	rmdir ../bin || true
 
 install: 
 	@echo "installing nsub to $(PREFIX)..."
 	mkdir -p "$(PREFIX)/bin" \
-	&& cp ../bin/nsub "$(PREFIX)/bin/" \
+	&& cp ../bin/nsub "$(PREFIX)/bin/"
 
 uninstall:
 	@echo "uninstalling nsub from $(PREFIX)..."

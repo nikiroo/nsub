@@ -7,7 +7,7 @@ CFLAGS   += -ggdb -O0
 CXXFLAGS += -ggdb -O0
 endif
 
-.PHONY: all install uninstall clean mrpropre mrpropre debug
+.PHONY: all install uninstall clean mrpropre mrpropre
 
 all: ../bin/libutils.o
 
@@ -24,9 +24,6 @@ utils/desktop.o: utils/desktop.[ch] utils/array.h
 ../bin/libutils.o: $(OBJECTS)
 	mkdir -p ../bin
 	$(LD) --relocatable $(OBJECTS) -o $@
-
-debug: 
-	$(MAKE) -f utils.d DEBUG=1
 
 clean:
 	rm -f utils/*.o
