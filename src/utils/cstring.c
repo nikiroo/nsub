@@ -1,7 +1,7 @@
 /*
  * CUtils: some small C utilities
  *
- * Copyright (C) 2013 Niki Roo
+ * Copyright (C) 2012 Niki Roo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
