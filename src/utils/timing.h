@@ -30,6 +30,10 @@
 #ifndef TIMING_H
 #define TIMING_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <sys/time.h>
 
 #define START struct timeval TIMING_start, TIMING_stop; \
@@ -45,3 +49,8 @@
 	gettimeofday(&TIMING_start, NULL);
 
 #endif // TIMING_H
+
+#ifdef __cplusplus
+}
+#endif
+

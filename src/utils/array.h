@@ -61,6 +61,10 @@
 #ifndef ARRAY_H
 #define ARRAY_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -367,4 +371,8 @@ void array_print_fmt(array *me,
 	void(*display)(char *buffer, void *item), char *buffer);
 
 #endif /* ARRAY_H */
+
+#ifdef __cplusplus
+}
+#endif
 

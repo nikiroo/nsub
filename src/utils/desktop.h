@@ -20,6 +20,10 @@
 #ifndef DESKTOP_H
 #define DESKTOP_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 
 #include "array.h"
@@ -46,3 +50,8 @@ desktop *desktop_find_id(array *children, int menu_id);
 char *desktop_find_icon(const char basename[], int icon_size);
 
 #endif /* DESKTOP_H */
+
+#ifdef __cplusplus
+}
+#endif
+

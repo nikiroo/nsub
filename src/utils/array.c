@@ -199,7 +199,8 @@ int array_addn(array *me, void *data, size_t n) {
 }
 
 void *array_get_ptr(array *me, size_t i) {
-	return me->data + (i * me->elem_size);
+	// cast to (char *) because we want 'byte' arithmetic
+	return (void *)(((char *)me->data) + (i * me->elem_size));
 }
 
 void array_get(array *me, void *target, size_t i) {
@@ -207,7 +208,8 @@ void array_get(array *me, void *target, size_t i) {
 }
 
 void array_getn(array *me, void *target, size_t i, size_t n) {
-	memcpy(target, me->data + (i * me->elem_size), n * me->elem_size);
+	// cast to (char *) because we want 'byte' arithmetic
+	memcpy(target, ((char *)(me->data)) + (i * me->elem_size), n * me->elem_size);
 }
 
 int array_set(array *me, size_t i, void *data) {
@@ -222,7 +224,8 @@ int array_setn(array *me, size_t i, void *data, size_t n) {
 	if (!array_assure(me, i + n))
 		return 0;
 	
-	memcpy(me->data + (i * me->elem_size), data, n * me->elem_size);
+	// cast to (char *) because we want 'byte' arithmetic
+	memcpy(((char *)(me->data)) + (i * me->elem_size), data, n * me->elem_size);
 	if ((i + n) > me->count)
 		me->count = i + n;
 	return 1;

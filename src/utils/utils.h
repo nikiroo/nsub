@@ -27,6 +27,10 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "array.h"
 #include "desktop.h"
 #include "print.h"
@@ -42,3 +46,8 @@
 char *utils_strdup(const char *source);
 
 #endif // UTILS_H
+
+#ifdef __cplusplus
+}
+#endif
+
