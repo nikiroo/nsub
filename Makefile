@@ -1,12 +1,26 @@
 NAME=nsub
 
 .PHONY: all build rebuild install uninstall clean mrpropre mrpropre love debug \
-	doc man
+	doc man run tests test run-test run-test-more
 
 all: build
 
 build: bin/nsub
 	@echo Build successful.
+
+run: bin/nsub
+	bin/nsub
+	
+tests: test
+
+test:
+	$(MAKE) -C src -f tests.d
+	
+run-test:
+	$(MAKE) -C src -f tests.d run
+
+run-test-more:
+	$(MAKE) -C src -f tests.d run-more
 
 rebuild: clean build
 
@@ -25,6 +39,7 @@ debug:
 mrproper: mrpropre
 
 mrpropre: clean
+	$(MAKE) -C src -f tests.d mrpropre
 	$(MAKE) -C src -f utils.d mrpropre
 	$(MAKE) -C src -f nsub.d  mrpropre
 	rm -f man/man1/*.1 man/*/man1/*.1
@@ -33,6 +48,7 @@ mrpropre: clean
 	rmdir doc || true
 
 clean:
+	$(MAKE) -C src -f tests.d clean
 	$(MAKE) -C src -f utils.d clean
 	$(MAKE) -C src -f nsub.d  clean
 

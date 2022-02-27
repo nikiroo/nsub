@@ -51,12 +51,15 @@ Lancez simplement `make`.
 
 Vous pouvez aussi utiliser ces options make :
 
-- `make install PREFIX=/usr/local` : installe le programme dans PREFIX (par défaut, /usr/local)
+- `make doc` : génère la documentation Doxygen (`doxygen` est requis)
+- `make man` : génère le manuel (`pandoc` est requis)
+- `make install PREFIX=/usr/local` : installe le programme dans PREFIX (par défaut, /usr/local) et le manuel si généré
 - `make uninstall` : désinstalle le programme de PREFIX
 - `make clear` : efface les fichiers temporaires
 - `make mrpropre` : efface les fichiers temporaires mais aussi l'exécutable principal et la documentation
-- `make doc` : génère la documentation Doxygen (`doxygen` est requis)
-- `make man` : génère le manuel (`pandoc` est requis)
+- `make test` : compile les tests unitaires (`check` est requis)
+- `make run-test` : démarre les tests unitaires
+- `make run-test-more` : démarre les tests unitaires supplémentaires (peut être long)
 
 ## Auteur
 

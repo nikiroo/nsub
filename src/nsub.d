@@ -1,5 +1,7 @@
-CFLAGS   += -Wall -I./ -std=c99
-CXXFLAGS += -Wall -I./
+# Note: 99+ required for-loop initial declaration (CentOS 6)
+
+CFLAGS   += -Wall -pedantic -I./ -std=c99
+CXXFLAGS += -Wall -pedantic -I./
 PREFIX   =  /usr/local
 
 ifdef DEBUG
