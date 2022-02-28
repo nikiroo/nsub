@@ -25,32 +25,13 @@
  Description: cstring is a collection of helper functions to manipulate string of text
  */
 
+#include "cstring.h"
+
+#include <stdarg.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
-#include <math.h>
 #include <wchar.h>
 #include <wctype.h>
-#include <stddef.h>
-#include <stdarg.h>
-
-/* Windows (and maybe others?) doesn't know about strnlen */
-#ifndef strnlen
-size_t strnlen(const char *s, size_t maxlen);
-size_t strnlen(const char *s, size_t maxlen) {
-	size_t i;
-	for (i = 0; s[i]; i++) {
-		if (i >= maxlen)
-			return maxlen;
-	}
-
-	return i;
-}
-#endif
-
-#include "cstring.h"
-#include "net.h"
-#include "base64.h"
 
 #ifndef BUFFER_SIZE
 #define BUFFER_SIZE 81
@@ -64,11 +45,14 @@ size_t strnlen(const char *s, size_t maxlen) {
 
 //start of private prototypes
 
-struct cstring_private_struct {
+typedef struct {
 	size_t buffer_length;
-};
+} priv_t;
 
-void cstring_change_case(cstring *self, int up);
+/** Swap the data */
+static void cstring_swap(cstring *a, cstring *b);
+/** Change the case to upper -or- lower case (UTF8-compatible) */
+static void cstring_change_case(cstring *self, int up);
 
 //end of private prototypes
 
@@ -77,9 +61,9 @@ cstring *new_cstring() {
 
 	string = malloc(sizeof(cstring));
 	strcpy(string->CNAME, "[CString]");
-	string->priv = malloc(sizeof(struct cstring_private_struct));
+	string->priv = malloc(sizeof(priv_t));
 	string->length = 0;
-	string->priv->buffer_length = BUFFER_SIZE;
+	((priv_t *) string->priv)->buffer_length = BUFFER_SIZE;
 	string->string = malloc(sizeof(char) * BUFFER_SIZE);
 	string->string[0] = '\0';
 
@@ -96,8 +80,28 @@ void free_cstring(cstring *string) {
 	free(string);
 }
 
+void cstring_swap(cstring *a, cstring *b) {
+	void *tmp_p;
+	char *tmp_s;
+	size_t tmp_l;
+
+	tmp_s = a->string;
+	tmp_l = a->length;
+	tmp_p = a->priv;
+
+	a->string = b->string;
+	a->length = b->length;
+	a->priv = b->priv;
+
+	b->string = tmp_s;
+	b->length = tmp_l;
+	b->priv = tmp_p;
+}
+
 int cstring_grow(cstring *self, int min_extra) {
-	size_t sz = self->priv->buffer_length;
+	priv_t *priv = ((priv_t *) self->priv);
+
+	size_t sz = priv->buffer_length;
 	size_t req = self->length + min_extra;
 
 	if (req > sz) {
@@ -112,10 +116,11 @@ int cstring_grow(cstring *self, int min_extra) {
 }
 
 int cstring_grow_to(cstring *self, int min_buffer) {
-	void *mem;
-	if (min_buffer > self->priv->buffer_length) {
-		self->priv->buffer_length = min_buffer;
-		mem = realloc(self->string, sizeof(char) * self->priv->buffer_length);
+	priv_t *priv = ((priv_t *) self->priv);
+
+	if (min_buffer > priv->buffer_length) {
+		priv->buffer_length = min_buffer;
+		void *mem = realloc(self->string, sizeof(char) * priv->buffer_length);
 
 		if (mem)
 			self->string = (char *) mem;
@@ -126,13 +131,24 @@ int cstring_grow_to(cstring *self, int min_buffer) {
 	return 1;
 }
 
+void cstring_compact(cstring *self) {
+	if (self != NULL) {
+		priv_t *priv = ((priv_t *) self->priv);
+
+		priv->buffer_length = self->length + 1;
+		self->string = (char *) realloc(self->string, self->length + 1);
+	}
+}
+
 int cstring_add_car(cstring *self, char source) {
-	char source2[2];
+	if (!cstring_grow(self, 1))
+		return 0;
 
-	source2[0] = source;
-	source2[1] = '\0';
+	self->string[self->length] = source;
+	self->length++;
+	self->string[self->length] = '\0';
 
-	return cstring_add(self, source2);
+	return 1;
 }
 
 int cstring_add(cstring *self, const char source[]) {
@@ -140,8 +156,7 @@ int cstring_add(cstring *self, const char source[]) {
 }
 
 int cstring_addf(cstring *self, const char source[], size_t idx) {
-	// Note: negative 'n' is not promised by the .h file
-	return cstring_addfn(self, source, idx, -1);
+	return cstring_addfn(self, source, idx, 0);
 }
 
 int cstring_addn(cstring *self, const char source[], size_t n) {
@@ -155,8 +170,7 @@ int cstring_addfn(cstring *self, const char source[], size_t idx, size_t n) {
 	if (source && ss > idx && idx >= 0) {
 		ss -= idx;
 
-		// Note: negative 'n' is not promised by the .h file
-		if (n >= 0 && n < ss)
+		if (n && n < ss)
 			ss = n;
 
 		if (ss) {
@@ -165,8 +179,8 @@ int cstring_addfn(cstring *self, const char source[], size_t idx, size_t n) {
 				return 0;
 
 			memcpy(self->string + self->length, source + idx, ss);
-			self->string[ss] = '\0';
-			self->length += ss + 1;
+			self->length += ss;
+			self->string[self->length] = '\0';
 		}
 	}
 
@@ -195,64 +209,27 @@ int cstring_addp(cstring *self, const char *fmt, ...) {
 	return ok;
 }
 
-char *cstring_convert(cstring *self) {
-	char *string;
-
-	if (!self)
-		return NULL;
-
-	// Note: this could be skipped.
-	cstring_compact(self);
-
-	free(self->priv);
-	string = (self->string);
-	free(self);
-
-	return string;
-}
-
-cstring *cstring_clone(cstring *self) {
-	if (self == NULL)
-		return NULL;
-
-	return cstring_clones(self->string);
-}
-
-char *cstring_sclone(cstring *self) {
-	if (self == NULL)
-		return NULL;
-
-	return cstring_convert(cstring_clone(self));
-}
-
-char *cstring_sclones(const char self[]) {
-	return cstring_convert(cstring_clones(self));
-}
-
-cstring *cstring_clones(const char self[]) {
-	cstring *clone;
-
-	if (self == NULL)
-		return NULL;
-
-	clone = new_cstring();
-	cstring_add(clone, self);
-
-	return clone;
-}
-
-void cstring_compact(cstring *self) {
-	if (self != NULL) {
-		self->priv->buffer_length = self->length + 1;
-		self->string = (char *) realloc(self->string, self->length + 1);
-	}
-}
-
 void cstring_cut_at(cstring *self, size_t size) {
 	if (self->length > size) {
 		self->string[size] = '\0';
 		self->length = size;
 	}
+}
+
+cstring *cstring_substring(const char self[], size_t start, size_t length) {
+	size_t sz = strlen(self);
+	cstring * sub = new_cstring();
+
+	if (start <= sz) {
+		const char *source = (self + start);
+
+		if (!length)
+			cstring_add(sub, source);
+		else
+			cstring_addn(sub, source, length);
+	}
+
+	return sub;
 }
 
 /*
@@ -337,50 +314,87 @@ void cstring_cut_at(cstring *self, size_t size) {
  }
  */
 
-cstring *cstring_substring(cstring *self, size_t start, size_t length) {
-	cstring *sub;
-	char *source;
+void cstring_reverse(char *self) {
+	size_t i;
+	size_t last;
+	char tmp;
 
-	if (length == 0) {
-		length = self->length - start;
+	size_t sz = strlen(self);
+	if (sz) {
+		last = sz - 1;
+		for (i = 0; i <= (last / 2); i++) {
+			tmp = self[i];
+			self[i] = self[last - i];
+			self[last - i] = tmp;
+		}
+	}
+}
+
+int cstring_replace(cstring *self, const char from[], const char to[]) {
+	cstring *buffer;
+	size_t i;
+	size_t step;
+	char *swap;
+	int occur;
+
+	// easy optimization:
+	if (!from || !from[0])
+		return 0;
+	if (from && to && from[0] && to[0] && !from[1] && !to[1])
+		return cstring_replace_car(self->string, from[0], to[0]);
+
+	// optimize for same-size strings?
+
+	step = strlen(from) - 1;
+	buffer = new_cstring();
+	occur = 0;
+	for (i = 0; i < self->length; i++) {
+		if (cstring_starts_with(self->string, from, i)) {
+			cstring_add(buffer, to);
+			i += step;
+			occur++;
+		} else {
+			cstring_add_car(buffer, self->string[i]);
+		}
 	}
 
-	sub = new_cstring();
-	source = self->string;
-	source = source + start;
+	// not clean, but quicker:
+	swap = self->string;
+	self->string = buffer->string;
+	buffer->string = swap;
+	self->length = buffer->length;
 
-	cstring_addn(sub, source, length);
-
-	return sub;
+	free_cstring(buffer);
+	return occur;
 }
 
-int cstring_starts_with(cstring *self, const char find[], size_t start_index) {
-	return cstring_sstarts_with(self->string, find, start_index);
+int cstring_replace_car(char *self, char from, char to) {
+	size_t i;
+	int occur = 0;
+
+	for (i = 0; self[i]; i++) {
+		if (self[i] == from) {
+			self[i] = to;
+			occur++;
+		}
+	}
+
+	return occur;
 }
 
-int cstring_sstarts_with(const char string[], const char find[],
-		size_t start_index) {
+int cstring_starts_with(const char string[], const char find[],
+		size_t start_idx) {
 	size_t i;
 
 	for (i = 0;
-			string[start_index + i] == find[i]
-					&& string[start_index + i] != '\0' && find[i] != '\0'; i++)
+			string[start_idx + i] == find[i] && string[start_idx + i] != '\0'
+					&& find[i] != '\0'; i++)
 		;
 
 	return find[i] == '\0';
 }
 
-int cstring_ends_with(cstring *self, const char find[]) {
-	size_t sz_needle = strlen(find);
-	if (sz_needle <= self->length) {
-		if (!strcmp(self->string + (self->length - sz_needle), find))
-			return 1;
-	}
-
-	return 0;
-}
-
-int cstring_sends_with(const char self[], const char find[]) {
+int cstring_ends_with(const char self[], const char find[]) {
 	size_t sz = strlen(self);
 	size_t sz_needle = strlen(find);
 	if (sz_needle <= sz) {
@@ -403,71 +417,24 @@ long cstring_find(const char self[], const char find[], size_t start_index) {
 	return -1;
 }
 
-long cstring_rfind(char self[], const char find[], size_t rstart_index) {
+long cstring_rfind(char self[], const char find[], long rstart_index) {
 	size_t sz = strlen(self);
 	size_t sz_needle = strlen(find);
 
 	if (rstart_index <= 0)
-		rstart_index += (sz - 1);
+		rstart_index = (sz - 1);
 
 	if (sz > rstart_index && sz_needle <= sz) {
-		for (size_t i = sz - sz_needle; i; i--) {
-			if (cstring_sstarts_with(self, find, i))
+		for (size_t i = rstart_index;; i--) {
+			if (cstring_starts_with(self, find, i))
 				return i;
+
+			if (!i)
+				break;
 		}
 	}
 
 	return -1;
-}
-
-int cstring_replace_car(cstring *self, char from, char to) {
-	size_t i;
-	int occur = 0;
-
-	for (i = 0; i < self->length; i++) {
-		if (self->string[i] == from) {
-			self->string[i] = to;
-			occur++;
-		}
-	}
-
-	return occur;
-}
-
-int cstring_replace(cstring *self, const char from[], const char to[]) {
-	cstring *buffer;
-	size_t i;
-	size_t step;
-	char *swap;
-	int occur;
-
-	// easy optimization:
-	if (from && to && from[0] && to[0] && !from[1] && !to[1])
-		return cstring_replace_car(self, from[0], to[0]);
-
-	// optimize for same-size strings?
-
-	step = strlen(from) - 1;
-	buffer = new_cstring();
-	occur = 0;
-	for (i = 0; i < self->length; i++) {
-		if (cstring_starts_with(self, from, i)) {
-			cstring_add(buffer, to);
-			i += step;
-			occur++;
-		} else {
-			cstring_add_car(buffer, self->string[i]);
-		}
-	}
-
-	// not clean, but quicker:
-	swap = self->string;
-	self->string = buffer->string;
-	buffer->string = swap;
-	self->length = buffer->length;
-
-	free_cstring(buffer);
-	return occur;
 }
 
 void cstring_clear(cstring *self) {
@@ -475,19 +442,31 @@ void cstring_clear(cstring *self) {
 	self->string[0] = '\0';
 }
 
-void cstring_reverse(cstring *self) {
-	size_t i;
-	size_t last;
-	char tmp;
+char *cstring_convert(cstring *self) {
+	char *string;
 
-	if (self->length > 0) {
-		last = self->length - 1;
-		for (i = 0; i <= (last / 2); i++) {
-			tmp = self->string[i];
-			self->string[i] = self->string[last - i];
-			self->string[last - i] = tmp;
-		}
-	}
+	if (!self)
+		return NULL;
+
+	// Note: this could be skipped.
+	cstring_compact(self);
+
+	string = (self->string);
+	self->string = NULL;
+
+	free_cstring(self);
+
+	return string;
+}
+
+cstring *cstring_clone(cstring *self) {
+	if (self == NULL)
+		return NULL;
+
+	cstring *clone = new_cstring();
+	cstring_add(clone, self->string);
+
+	return clone;
 }
 
 void cstring_rtrim(cstring *self, char car) {
@@ -513,10 +492,7 @@ void cstring_trim(cstring *self, char car) {
 		cstring *tmp = new_cstring();
 		cstring_add(tmp, self->string + i);
 
-		free(self->string);
-		self->priv->buffer_length = tmp->priv->buffer_length;
-		self->string = tmp->string;
-		tmp->string = NULL;
+		cstring_swap(self, tmp);
 		free_cstring(tmp);
 	}
 }
@@ -559,10 +535,10 @@ void cstring_change_case(cstring *self, int up) {
 	size_t s, i;
 	mbstate_t state;
 
-// init the state (passing NULL is not thread-safe)
+	// init the state (passing NULL is not thread-safe)
 	memset(&state, '\0', sizeof(mbstate_t));
 
-// won't contain MORE chars (but maybe less)
+	// won't contain MORE chars (but maybe less)
 	wide = (wchar_t *) malloc((self->length + 1) * sizeof(wchar_t));
 	s = mbsrtowcs(wide, &src, self->length, &state);
 	wide[s] = (wchar_t) '\0';
@@ -584,7 +560,7 @@ int cstring_readline(cstring *self, FILE *file) {
 	size_t size = 0;
 	int full_line;
 
-// sanity check:
+	// sanity check:
 	if (!file)
 		return 0;
 
@@ -679,65 +655,20 @@ cstring *cstring_getfile(cstring *path) {
 	if (i < 0 || (size_t) (i + 1) >= path->length)
 		return new_cstring();
 
-	result = cstring_clones(path->string + i + 1);
+	result = new_cstring();
+	cstring_add(result, path->string + i + 1);
 	return result;
 }
 
 cstring *cstring_getfiles(const char path[]) {
-	cstring *copy, *result;
+	cstring *copy = new_cstring();
+	cstring_add(copy, path);
 
-	copy = cstring_clones(path);
-	result = cstring_getfile(copy);
+	cstring *result = cstring_getfile(copy);
+
 	free_cstring(copy);
+
 	return result;
-}
-
-cstring *cstring_to_b64(cstring *self) {
-	static base64 *cstring_b64 = NULL;
-	if (!cstring_b64)
-		cstring_b64 = base64_new();
-
-	return base64_encode(cstring_b64, self);
-}
-
-char *cstring_to_sb64(cstring *self) {
-	static base64 *cstring_b64 = NULL;
-	if (!cstring_b64)
-		cstring_b64 = base64_new();
-
-	return cstring_convert(base64_encode(cstring_b64, self));
-}
-
-char *cstring_to_sb64s(char *self, size_t size) {
-	static base64 *cstring_b64 = NULL;
-	if (!cstring_b64)
-		cstring_b64 = base64_new();
-
-	return cstring_convert(base64_encodesi(cstring_b64, self, size));
-}
-
-cstring *cstring_from_b64(cstring *self) {
-	static base64 *cstring_b64 = NULL;
-	if (!cstring_b64)
-		cstring_b64 = base64_new();
-
-	return base64_decode(cstring_b64, self);
-}
-
-char *cstring_from_sb64(cstring *self) {
-	static base64 *cstring_b64 = NULL;
-	if (!cstring_b64)
-		cstring_b64 = base64_new();
-
-	return cstring_convert(base64_decode(cstring_b64, self));
-}
-
-char *cstring_from_sb64s(char *self) {
-	static base64 *cstring_b64 = NULL;
-	if (!cstring_b64)
-		cstring_b64 = base64_new();
-
-	return cstring_convert(base64_decodes(cstring_b64, self));
 }
 
 int cstring_is_whole(cstring *self) {

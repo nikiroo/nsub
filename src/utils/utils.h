@@ -22,7 +22,8 @@
  * @author Niki
  * @date 2020
  *
- * @brief Include all the other .H as well as a C99-compatible utils_strdup function.
+ * @brief Include all the other .h as well as a C99-compatible strdup/strnlen
+ * 		functions.
  */
 #ifndef UTILS_H
 #define UTILS_H
@@ -37,25 +38,16 @@ extern "C" {
 #include "print.h"
 #include "timing.h"
 
-/**
- * A C99-compatible <tt>strdup</tt> function (i.e., a <tt>strdup</tt> for
- * CentOS 6).
- *
- * @param source the source string to copy
- *
- * @return a new string (malloc'ed) which your are now responsible of
- */
-char *utils_strdup(const char *source);
+/* Helps with C99 compatibility for code that is not */
 
-/**
- * A C99-compatible <tt>strdup</tt> function (i.e., a <tt>strdup</tt> for
- * CentOS 6).
- *
- * @param source the source string to copy
- *
- * @return a new string (malloc'ed) which your are now responsible of
- */
-cstring *utils_cstrdup(const cstring *source);
+#ifndef strnlen
+size_t strnlen(const char *s, size_t maxlen);
+#endif
+#ifndef strdup
+char *strdup(const char *source);
+#endif
+
+/* */
 
 #endif // UTILS_H
 

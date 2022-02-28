@@ -22,7 +22,7 @@ ck_abort_msg("%s\n\tExpected: <%s>\n\tReceived: <%s>", title, expected, received
 
 #define ASSERT_EQUALS_INT(title, expected, received) \
 	if (expected != received) { \
-ck_abort_msg("%s\n\tExpected: %d\n\tReceived: %d", title, expected, received); \
+ck_abort_msg("%s\n\tExpected: %lld\n\tReceived: %lld", title, (long long)expected, (long long)received); \
 }
 
 #define ASSERT_EQUALS_SIZE(title, expected, received) \

@@ -70,7 +70,7 @@ void song_add_unknown(song_t *song, char *text) {
 	lyric.start = 0;
 	lyric.stop = 0;
 	lyric.name = NULL;
-	lyric.text = text ? utils_strdup(text) : NULL;
+	lyric.text = text ? strdup(text) : NULL;
 	array_add(song->lyrics, &lyric);
 }
 
@@ -92,7 +92,7 @@ void song_add_comment(song_t *song, char *comment) {
 	lyric.start = 0;
 	lyric.stop = 0;
 	lyric.name = NULL;
-	lyric.text = comment ? utils_strdup(comment) : NULL;
+	lyric.text = comment ? strdup(comment) : NULL;
 	array_add(song->lyrics, &lyric);
 }
 
@@ -104,15 +104,15 @@ void song_add_lyric(song_t *song, int start, int stop, char *name, char *text) {
 	lyric.num = song->current_num;
 	lyric.start = start;
 	lyric.stop = stop;
-	lyric.name = name ? utils_strdup(name) : NULL;
-	lyric.text = text ? utils_strdup(text) : NULL;
+	lyric.name = name ? strdup(name) : NULL;
+	lyric.text = text ? strdup(text) : NULL;
 	array_add(song->lyrics, &lyric);
 }
 
 void song_add_meta(song_t *song, char *key, char *value) {
 	meta_t meta;
-	meta.key = key ? utils_strdup(key) : NULL;
-	meta.value = value ? utils_strdup(value) : NULL;
+	meta.key = key ? strdup(key) : NULL;
+	meta.value = value ? strdup(value) : NULL;
 	array_add(song->metas, &meta);
 }
 

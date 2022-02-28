@@ -34,13 +34,12 @@ extern "C" {
  * MUST NOT be used again, and you are responsible for freeing the said char*).
  */
 typedef struct cstring_struct cstring;
-typedef struct cstring_private_struct cstring_private;
 
 struct cstring_struct {
 	char CNAME[32];
 	char *string;
 	size_t length;
-	cstring_private *priv;
+	void *priv;
 };
 
 /**
@@ -84,6 +83,13 @@ int cstring_grow(cstring *self, int min_extra);
 int cstring_grow_to(cstring *self, int min_buffer);
 
 /**
+ * Compact the memory used by this string.
+ *
+ * @param self the string to work on
+ */
+void cstring_compact(cstring *self);
+
+/**
  * Add a char at the end of the given cstring.
  *
  * @param self the cstring to work on
@@ -121,11 +127,12 @@ int cstring_addf(cstring *self, const char source[], size_t idx);
 
 /**
  * Add a string (a sequence of char that MAY end with '\0') at the end of the
- * given cstring, up to N chars long.
+ * given string, up to N chars long.
  *
  * @param self the string to work on
  * @param source the string to add
- * @param n the maximum number of chars to add (excluding the NUL byte)
+ * @param n the maximum number of chars to add (excluding the NUL byte), or 0
+ * 		to add the whole source (which MUST then end with a '\0')
  *
  * @return TRUE if success (FALSE means it was unable to grow due to memory
  * 		pressure)
@@ -139,7 +146,8 @@ int cstring_addn(cstring *self, const char source[], size_t n);
  * @param self the string to work on
  * @param source the string to add
  * @param idx the starting index at which to copy from the source
- * @param n the maximum number of chars to add (excluding the NUL byte)
+ * @param n the maximum number of chars to add (excluding the NUL byte) or 0
+ * 		to add the whole source (which MUST then end with a '\0')
  *
  * @return TRUE if success (FALSE means it was unable to grow due to memory
  * 		pressure)
@@ -160,23 +168,26 @@ int cstring_addp(cstring *self, const char *fmt, ...);
 
 /**
  * Cut the string at the given size if it is greater.
- * E.g.: it will have (at most) this many characters (without counting NUL) in it after.
+ *
+ * E.g.: it will have (at most) this many characters (without counting NULL) in
+ * it after.
  *
  * @param self the string to work on
- * @param size the size to cut at (the maximum size of the cstring after this operation, NUL excepted)
+ * @param size the size to cut at (the maximum size of the cstring after this
+ * 		operation, NUL excepted)
  */
 void cstring_cut_at(cstring *self, size_t size);
 
 /**
- * Create a substring of this cstring.
+ * Create a substring of this one.
  *
- * @param self the cstring to work on
+ * @param self the string to work on
  * @param start the index to start at
  * @param length the number of characters to copy, 0 for 'up to the end'
  *
  * @return a newly allocated cstring
  */
-cstring *cstring_substring(cstring *self, size_t start, size_t length);
+cstring *cstring_substring(const char self[], size_t start, size_t length);
 
 /**
  * Split a cstring into "smaller" cstrings every time the given separator is found.
@@ -212,67 +223,44 @@ cstring *cstring_substring(cstring *self, size_t start, size_t length);
 //TODO: use a []
 //clist *cstring_splitc(cstring *self, char delim, char quote);
 /**
- * Reverse the given cstring.
+ * Reverse the given string.
  *
- * @param self the cstring to work on
+ * @param self the string to work on
  */
-void cstring_reverse(cstring *self);
+void cstring_reverse(char *self);
 
 /**
- * Replace all occurences of a string inside the given cstring by another.
+ * Replace all occurrences of a string inside the given cstring by another.
  *
- * @param self the cstring to work on
+ * @param self the string to work on
  * @param from the string to replace
  * @param to the replacement string
  *
- * @return the number of occurences changed
+ * @return the number of occurrences changed
  */
 int cstring_replace(cstring *self, const char from[], const char to[]);
 
 /**
- * Replace all occurences of a char inside the given cstring by another.
+ * Replace all occurrences of a char inside the given string by another.
  *
- * @param self the cstring to work on
+ * @param self the string to work on
  * @param from the char to replace
  * @param to the replacement char
  *
- * @return the number of occurences changed
+ * @return the number of occurrences changed
  */
-int cstring_replace_car(cstring *self, char from, char to);
-
-/**
- * Check if the cstring starts with the given pattern.
- *
- * @param self the cstring to work on
- * @param find the string to find
- * @param start_index the index at which to start the comparison
- *
- * @return 1 if it does
- */
-int cstring_starts_with(cstring *self, const char find[], size_t start_index);
+int cstring_replace_car(char *self, char from, char to);
 
 /**
  * Check if the string starts with the given pattern.
  *
  * @param self the string to work on
  * @param find the string to find
- * @param start_index the index at which to start the comparison
+ * @param start_idx the index at which to start the comparison
  *
  * @return 1 if it does
  */
-int cstring_sstarts_with(const char string[], const char find[],
-		size_t start_index);
-
-/**
- * Check if the cstring ends with the given pattern.
- *
- * @param self the cstring to work on
- * @param find the string to find (if empty, will always be found)
- * @param start_index the index at which to start the comparison
- *
- * @return 1 if it does
- */
-int cstring_ends_with(cstring *self, const char find[]);
+int cstring_starts_with(const char self[], const char find[], size_t start_idx);
 
 /**
  * Check if the string ends with the given pattern.
@@ -283,12 +271,12 @@ int cstring_ends_with(cstring *self, const char find[]);
  *
  * @return 1 if it does
  */
-int cstring_sends_with(const char self[], const char find[]);
+int cstring_ends_with(const char self[], const char find[]);
 
 /**
  * Find the given substring in this one.
  *
- * @param self the cstring to work on
+ * @param self the string to work on
  * @param find the string to find
  * @param start_index the index at which to start the search
  *
@@ -300,7 +288,7 @@ long cstring_find(const char self[], const char find[], size_t rstart_index);
 /**
  * Find the given substring in this one, but search in the reverse direction.
  *
- * @param self the cstring to work on
+ * @param self the string to work on
  * @param find the string to find
  * @param rstart_index the index at which to start the search, or 0 for
  *        "end of string" (remember that it is reverse, you would then never
@@ -311,35 +299,12 @@ long cstring_find(const char self[], const char find[], size_t rstart_index);
  * @return the start index of the found string if found, or a negative value
  * if not
  */
-long cstring_rfind(char self[], const char find[], size_t rstart_index);
+long cstring_rfind(char self[], const char find[], long rstart_index);
 
 /**
- * Check if the given string is contained by this one.
+ * Clear (truncate its size to 0) the given string.
  *
  * @param self the string to work on
- * @param find the string to find
- * @param start_index the index at which to start the comparison
- *
- * @return the start index of the found string if found, or a negative value if not
- */
-long long cstring_sfind(const char self[], const char find[],
-		size_t start_index);
-
-/**
- * Check if any of the given characters (in a char* which MUST end with '\0') is found.
- *
- * @param self the cstring to work on
- * @param find the characters to find, which MUST be an array of char that ends with '\0'
- * @param start_index the index at which to start the comparison
- *
- * @return the start index of the first found character if found, or a negative value if not
- */
-long long cstring_find_any(cstring *self, const char find[], size_t start_index);
-
-/**
- * Clear (truncate its size to 0) the given cstring.
- *
- * @param self the cstring to work on
  */
 void cstring_clear(cstring *self);
 
@@ -353,79 +318,12 @@ void cstring_clear(cstring *self);
 char *cstring_convert(cstring *self);
 
 /**
- * Clone this cstring.
+ * Clone this string.
  * NULL will return NULL.
  *
- * @param self the cstring to clone
+ * @param self the string to clone
  */
 cstring *cstring_clone(cstring *self);
-
-/**
- * Clone this string into a new cstring.
- * NULL will return NULL.
- *
- * @param self the string to clone
- */
-cstring *cstring_clones(const char self[]);
-
-/**
- * Clone this cstring into a new string.
- * NULL will return NULL.
- *
- * @param self the cstring to clone
- */
-char *cstring_sclone(cstring *self);
-
-/**
- * Clone this string into a new string.
- * NULL will return NULL.
- *
- * @param self the string to clone
- */
-char *cstring_sclones(const char self[]);
-
-/**
- * Encode the string to BASE64.
- *
- * @param self the cstring to encode
- */
-cstring *cstring_to_b64(cstring *self);
-
-/**
- * Encode the string to BASE64.
- *
- * @param self the cstring to encode
- */
-char *cstring_to_sb64(cstring *self);
-
-/**
- * Encode the string to BASE64.
- *
- * @param self the string to encode
- * @param size the size of the data (e.g., strlen(self))
- */
-char *cstring_to_sb64s(char *self, size_t size);
-
-/**
- * Decode the string to BASE64.
- *
- * @param self the cstring to decode
- */
-cstring *cstring_from_b64(cstring *self);
-
-/**
- * Decode the string to BASE64.
- *
- * @param self the cstring to decode
- */
-char *cstring_from_sb64(cstring *self);
-
-/**
- * Decode the string to BASE64.
- *
- * @param self the string to decode
- */
-char *cstring_from_sb64s(char *self);
 
 /**
  * Trim this cstring of all trailing 'car' instances.
@@ -437,7 +335,6 @@ char *cstring_from_sb64s(char *self);
  */
 void cstring_rtrim(cstring *self, char car);
 
-
 /**
  * Trim this cstring of all 'car' instances from the start and/or the
  * end of the string.
@@ -448,13 +345,6 @@ void cstring_rtrim(cstring *self, char car);
  * @return a trimmed cstring
  */
 void cstring_trim(cstring *self, char car);
-
-/**
- * Compact the memory used by this cstring.
- *
- * @param self the cstring to work on
- */
-void cstring_compact(cstring *self);
 
 /**
  * Change the case to upper-case (UTF-8 compatible, but the string MUST be

@@ -87,7 +87,7 @@ int nsub_read_lrc(song_t *song, char *line) {
 		line[colon] = '\0';
 		line[end] = '\0';
 		if (!strcmp("language", line + 1)) {
-			song->lang = utils_strdup(line + text_offset);
+			song->lang = strdup(line + text_offset);
 		}else if (!strcmp("created_by", line + 1)) {
 			// skip (we KNOW what program we are)
 		} else {

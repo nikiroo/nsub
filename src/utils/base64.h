@@ -25,33 +25,14 @@ extern "C" {
 #define BASE64_H
 
 #include <stdlib.h>
-#include "cstring.h"
 
 typedef struct {
 	char *table;
 } base64;
 
-/**
- * Create a new base64 codec.
- *
- * @return a new codec
- */
-base64 *base64_new();
+char *base64_encode(const char data[]);
 
-/**
- * Free the given code.
- */
-void base64_free(base64 *self);
-
-cstring *base64_encode(base64 *self, cstring *data);
-
-cstring *base64_decode(base64 *self, cstring *data);
-
-cstring *base64_encodes(base64 *self, char *data);
-
-cstring *base64_encodesi(base64 *self, char *data, size_t size);
-
-cstring *base64_decodes(base64 *self, char *data);
+char *base64_decode(const char data[]);
 
 #endif
 

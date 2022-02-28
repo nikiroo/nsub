@@ -22,15 +22,23 @@
 #include "utils.h"
 #include "cstring.h"
 
-char *utils_strdup(const char *source) {
+#ifndef strnlen
+size_t strnlen(const char *s, size_t maxlen) {
+	size_t i;
+	for (i = 0; s[i]; i++) {
+		if (i >= maxlen)
+			return maxlen;
+	}
+
+	return i;
+}
+#endif
+
+#ifndef strdup
+char *strdup(const char *source) {
 	size_t sz = strlen(source);
 	char *new = malloc((sz + 1) * sizeof(char));
 	strcpy(new, source);
 	return new;
 }
-
-cstring *utils_cstrdup(const cstring *source) {
-	cstring *clone = new_cstring();
-	cstring_add(clone, source->string);
-	return clone;
-}
+#endif
