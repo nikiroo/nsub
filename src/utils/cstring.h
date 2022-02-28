@@ -56,68 +56,113 @@ cstring *new_cstring();
  *
  * Free all the resources allocated for this cstring.
  *
- * @param string the cstring to free, which MUST NOT be used again afterward
+ * @param self the cstring to free, which MUST NOT be used again afterward
  */
-void free_cstring(cstring *string);
+void free_cstring(cstring *self);
 
-//TODO: desc: will make sure it has enough space for MIN more chars
-void cstring_grow(cstring *self, int min);
+/**
+ * Grow the cstring to accommodate that many characters in addition to those
+ * already held, if needed.
+ *
+ * @param self the string to grow
+ * @param min the minimum number of extra characters it should be able to hold
+ *
+ * @return TRUE if success (FALSE means it was unable to grow due to memory
+ * 		pressure)
+ */
+int cstring_grow(cstring *self, int min_extra);
 
-//TODO: desc: will make sure it has enough space BUFFER chars (including NULL)
-void cstring_grow_to(cstring *self, int buffer);
+/**
+ * Grow the cstring to accommodate that many characters in total, if needed.
+ *
+ * @param self the string to grow
+ * @param min the minimum number of characters it should be able to hold
+ *
+ * @return TRUE if success (FALSE means it was unable to grow due to memory
+ * 		pressure)
+ */
+int cstring_grow_to(cstring *self, int min_buffer);
 
 /**
  * Add a char at the end of the given cstring.
  *
  * @param self the cstring to work on
  * @param source the character to add
+ *
+ * @return TRUE if success (FALSE means it was unable to grow due to memory
+ * 		pressure)
  */
-void cstring_add_car(cstring *self, char source);
+int cstring_add_car(cstring *self, char source);
 
 /**
- * Add a string (a sequence of char that MUST end with '\0') at the end of the given cstring.
+ * Add a string (a sequence of char that MUST end with '\0') at the end of the
+ * given cstring.
+ *
+ * @param self the string to work on
+ * @param source the string to add
+ *
+ * @return TRUE if success (FALSE means it was unable to grow due to memory
+ * 		pressure)
+ */
+int cstring_add(cstring *self, const char source[]);
+
+/**
+ * Add a string (a sequence of char that MUST end with '\0') at the end of the
+ * given cstring, starting from index.
  *
  * @param self the cstring to work on
  * @param source the string to add
+ * @param idx the starting index at which to copy from the source
+ *
+ * @return TRUE if success (FALSE means it was unable to grow due to memory
+ * 		pressure)
  */
-void cstring_add(cstring *self, const char source[]);
+int cstring_addf(cstring *self, const char source[], size_t idx);
 
 /**
- * Add a string (a sequence of char that MUST end with '\0') at the end of the given cstring, starting from index.
+ * Add a string (a sequence of char that MAY end with '\0') at the end of the
+ * given cstring, up to N chars long.
  *
- * @param self the cstring to work on
- * @param source the string to add
- * @param index the starting index at which to copy from the source
- */
-void cstring_addf(cstring *self, const char source[], size_t index);
-
-/**
- * Add a string (a sequence of char that MAY end with '\0') at the end of the given cstring, up to N chars long.
- *
- * @param self the cstring to work on
+ * @param self the string to work on
  * @param source the string to add
  * @param n the maximum number of chars to add (excluding the NUL byte)
- */
-void cstring_addn(cstring *self, const char source[], size_t n);
-
-/**
- * Add a string (a sequence of char that MAY end with '\0') at the end of the given cstring, starting from index, up to N chars long.
  *
- * @param self the cstring to work on
- * @param source the string to add
- * @param index the starting index at which to copy from the source
- * @param n the maximum number of chars to add (excluding the NUL byte)
+ * @return TRUE if success (FALSE means it was unable to grow due to memory
+ * 		pressure)
  */
-void cstring_addfn(cstring *self, const char source[], size_t index, size_t n);
-
-//TODO: desc + tests
-void cstring_addp(cstring *self, const char *fmt, ...);
+int cstring_addn(cstring *self, const char source[], size_t n);
 
 /**
- * Cut the cstring at the given size if it is greater.
+ * Add a string (a sequence of char that MAY end with '\0') at the end of the
+ * given cstring, starting from index, up to N chars long.
+ *
+ * @param self the string to work on
+ * @param source the string to add
+ * @param idx the starting index at which to copy from the source
+ * @param n the maximum number of chars to add (excluding the NUL byte)
+ *
+ * @return TRUE if success (FALSE means it was unable to grow due to memory
+ * 		pressure)
+ */
+int cstring_addfn(cstring *self, const char source[], size_t idx, size_t n);
+
+/**
+ * Add a string via the usual <tt>printf</tt> formatters.
+ *
+ * @param self the string to add to
+ * @param fmt the required format specifiers (@{see printf})
+ * @param ... the printf-format parameters
+ *
+ * @return TRUE if success (FALSE means it was unable to grow due to memory
+ * 		pressure)
+ */
+int cstring_addp(cstring *self, const char *fmt, ...);
+
+/**
+ * Cut the string at the given size if it is greater.
  * E.g.: it will have (at most) this many characters (without counting NUL) in it after.
  *
- * @param self the cstring to work on
+ * @param self the string to work on
  * @param size the size to cut at (the maximum size of the cstring after this operation, NUL excepted)
  */
 void cstring_cut_at(cstring *self, size_t size);

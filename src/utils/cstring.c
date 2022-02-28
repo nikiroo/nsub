@@ -96,16 +96,103 @@ void free_cstring(cstring *string) {
 	free(string);
 }
 
-void cstring_grow(cstring *self, int min) {
-	cstring_grow_to(self, self->length + min);
+int cstring_grow(cstring *self, int min_extra) {
+	size_t sz = self->priv->buffer_length;
+	size_t req = self->length + min_extra;
+
+	if (req > sz) {
+		sz += BUFFER_SIZE;
+		if (req > sz)
+			sz = req;
+
+		return cstring_grow_to(self, sz);
+	}
+
+	return 1;
 }
 
-void cstring_grow_to(cstring *self, int buffer) {
-	if (buffer > self->priv->buffer_length) {
-		self->priv->buffer_length = buffer;
-		self->string = (char *) realloc(self->string,
-				sizeof(char) * self->priv->buffer_length);
+int cstring_grow_to(cstring *self, int min_buffer) {
+	void *mem;
+	if (min_buffer > self->priv->buffer_length) {
+		self->priv->buffer_length = min_buffer;
+		mem = realloc(self->string, sizeof(char) * self->priv->buffer_length);
+
+		if (mem)
+			self->string = (char *) mem;
+		else
+			return 0;
 	}
+
+	return 1;
+}
+
+int cstring_add_car(cstring *self, char source) {
+	char source2[2];
+
+	source2[0] = source;
+	source2[1] = '\0';
+
+	return cstring_add(self, source2);
+}
+
+int cstring_add(cstring *self, const char source[]) {
+	return cstring_addf(self, source, 0);
+}
+
+int cstring_addf(cstring *self, const char source[], size_t idx) {
+	// Note: negative 'n' is not promised by the .h file
+	return cstring_addfn(self, source, idx, -1);
+}
+
+int cstring_addn(cstring *self, const char source[], size_t n) {
+	return cstring_addfn(self, source, 0, n);
+}
+
+int cstring_addfn(cstring *self, const char source[], size_t idx, size_t n) {
+	size_t ss;
+
+	ss = strlen(source);
+	if (source && ss > idx && idx >= 0) {
+		ss -= idx;
+
+		// Note: negative 'n' is not promised by the .h file
+		if (n >= 0 && n < ss)
+			ss = n;
+
+		if (ss) {
+			// "+1" for the added '\0'
+			if (!cstring_grow(self, ss + 1))
+				return 0;
+
+			memcpy(self->string + self->length, source + idx, ss);
+			self->string[ss] = '\0';
+			self->length += ss + 1;
+		}
+	}
+
+	return 1;
+}
+
+int cstring_addp(cstring *self, const char *fmt, ...) {
+	va_list ap;
+	char empty = '\0';
+
+	va_start(ap, fmt);
+	int sz = vsnprintf(&empty, 0, fmt, ap);
+	va_end(ap);
+
+	char *tmp = malloc((sz + 1) * sizeof(char));
+	if (!tmp)
+		return 0;
+
+	va_start(ap, fmt);
+	sz = vsnprintf(tmp, sz + 1, fmt, ap);
+	va_end(ap);
+
+	int ok = cstring_add(self, tmp);
+	free(tmp);
+
+	return ok;
 }
 
 char *cstring_convert(cstring *self) {
@@ -400,78 +487,6 @@ void cstring_reverse(cstring *self) {
 			self->string[i] = self->string[last - i];
 			self->string[last - i] = tmp;
 		}
-	}
-}
-
-void cstring_add_car(cstring *self, char source) {
-	char source2[2];
-
-	source2[0] = source;
-	source2[1] = '\0';
-
-	cstring_add(self, source2);
-}
-
-void cstring_addp(cstring *self, const char *fmt, ...) {
-	va_list ap;
-	char empty = '\0';
-
-	va_start(ap, fmt);
-	int sz = vsnprintf(&empty, 0, fmt, ap);
-	va_end(ap);
-
-	char *tmp = malloc((sz + 1) * sizeof(char));
-	cstring_grow(self, sz);
-
-	va_start(ap, fmt);
-	sz = vsnprintf(tmp, sz + 1, fmt, ap);
-	va_end(ap);
-
-	cstring_add(self, tmp);
-
-	free(tmp);
-}
-
-void cstring_add(cstring *self, const char source[]) {
-	cstring_addf(self, source, 0);
-}
-
-void cstring_addf(cstring *self, const char source[], size_t indexi) {
-	size_t ss, ptr;
-
-	if (source != NULL && strlen(source) > indexi) {
-		ss = strlen(source) - indexi;
-		while ((self->length + ss) >= (self->priv->buffer_length)) {
-			self->priv->buffer_length += BUFFER_SIZE;
-		}
-		self->string = (char *) realloc(self->string,
-				sizeof(char) * self->priv->buffer_length);
-
-		for (ptr = self->length; ptr <= (self->length + ss); ptr++) {
-			self->string[ptr] = source[ptr - self->length + indexi];
-		}
-		self->length += ss;
-	}
-}
-
-void cstring_addn(cstring *self, const char source[], size_t n) {
-	cstring_addfn(self, source, 0, n);
-}
-
-void cstring_addfn(cstring *self, const char source[], size_t indexi, size_t n) {
-	size_t i;
-	char *tmp;
-
-	for (i = indexi; i < (n + indexi) && source[i] != '\0'; i++)
-		;
-	if (source[i] == '\0') {
-		cstring_addf(self, source, indexi);
-	} else {
-		tmp = (char *) malloc(sizeof(char) * (n + 1));
-		strncpy(tmp, source + indexi, n);
-		tmp[n] = '\0';
-		cstring_add(self, tmp);
-		free(tmp);
 	}
 }
 

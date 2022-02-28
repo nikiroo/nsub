@@ -31,19 +31,31 @@
 extern "C" {
 #endif
 
+#include "cstring.h"
 #include "array.h"
 #include "desktop.h"
 #include "print.h"
 #include "timing.h"
 
 /**
- * A C99-compatible strdup function.
+ * A C99-compatible <tt>strdup</tt> function (i.e., a <tt>strdup</tt> for
+ * CentOS 6).
  *
  * @param source the source string to copy
  *
- * @return a new string (malloc'ed) which your are now respionsible of
+ * @return a new string (malloc'ed) which your are now responsible of
  */
 char *utils_strdup(const char *source);
+
+/**
+ * A C99-compatible <tt>strdup</tt> function (i.e., a <tt>strdup</tt> for
+ * CentOS 6).
+ *
+ * @param source the source string to copy
+ *
+ * @return a new string (malloc'ed) which your are now responsible of
+ */
+cstring *utils_cstrdup(const cstring *source);
 
 #endif // UTILS_H
 

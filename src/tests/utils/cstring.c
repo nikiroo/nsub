@@ -44,6 +44,19 @@ START(init)
 
 		if (s->length)
 			FAIL("empty cstring has a size of %zu", s->length);
+
+		END
+
+START(add_car)
+		cstring_add_car(s, 'T');
+		ASSERT_EQUALS_STR("Cannot add a single char", "T", s->string);
+
+		cstring_add_car(s, 'e');
+		cstring_add_car(s, 's');
+		cstring_add_car(s, 't');
+		cstring_add_car(s, 'y');
+		ASSERT_EQUALS_STR("Cannot add multiple chars", "Testy", s->string);
+
 		END
 
 START(adds)
@@ -114,6 +127,7 @@ START(clear)
 
 		if (s->length)
 			FAIL("empty cstring has a size of %zu", s->length);
+
 		END
 
 START(addp)
@@ -240,6 +254,7 @@ Suite *test_cstring(const char title[]) {
 	TCase *core = tcase_create("core");
 	tcase_add_checked_fixture(core, test_cstring_setup, test_cstring_teardown);
 	tcase_add_test(core, init);
+	tcase_add_test(core, add_car);
 	tcase_add_test(core, adds);
 	tcase_add_test(core, clear);
 	tcase_add_test(core, addp);

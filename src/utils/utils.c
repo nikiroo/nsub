@@ -20,10 +20,17 @@
 #include <string.h>
 
 #include "utils.h"
+#include "cstring.h"
 
 char *utils_strdup(const char *source) {
 	size_t sz = strlen(source);
 	char *new = malloc((sz + 1) * sizeof(char));
 	strcpy(new, source);
 	return new;
+}
+
+cstring *utils_cstrdup(const cstring *source) {
+	cstring *clone = new_cstring();
+	cstring_add(clone, source->string);
+	return clone;
 }
