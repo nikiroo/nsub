@@ -19,7 +19,7 @@
 
 #include "base64.h"
 
-#include <bits/stdint-uintn.h>
+#include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
