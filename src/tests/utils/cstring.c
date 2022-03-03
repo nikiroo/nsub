@@ -394,7 +394,7 @@ START(rfind)
 		ASSERT_EQUALS_INT("(g) find error", -1, cstring_rfind(str, "Oops", 0));
 		ASSERT_EQUALS_INT("(h) find error", 42, cstring_rfind(str, "e", 0));
 		ASSERT_EQUALS_INT("(i) find error", 42, cstring_rfind(str, "e", -1));
-		//ASSERT_EQUALS_INT("(j) find error", 35, cstring_rfind(str, "e", -2));
+		ASSERT_EQUALS_INT("(j) find error", 35, cstring_rfind(str, "e", -2));
 		ASSERT_EQUALS_INT("(k) find error", 35, cstring_rfind(str, "e", -3));
 		ASSERT_EQUALS_INT("(l) find error", 35, cstring_rfind(str, "e", 38));
 
@@ -463,9 +463,8 @@ Suite *test_cstring(const char title[]) {
 	tcase_add_test(core, reverse);
 	tcase_add_test(core, replace);
 	tcase_add_test(core, replace_car);
-	tcase_add_test(core, ends_with);
 	tcase_add_test(core, starts_with);
-
+	tcase_add_test(core, ends_with);
 	tcase_add_test(core, find);
 	tcase_add_test(core, rfind);
 
