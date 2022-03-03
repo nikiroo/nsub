@@ -422,7 +422,7 @@ long cstring_rfind(char self[], const char find[], long rstart_index) {
 	size_t sz_needle = strlen(find);
 
 	if (rstart_index <= 0)
-		rstart_index = (sz - 1);
+		rstart_index += (sz - 1);
 
 	if (sz > rstart_index && sz_needle <= sz) {
 		for (size_t i = rstart_index;; i--) {
