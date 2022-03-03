@@ -17,12 +17,33 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <check.h>
-#include <string.h>
+#include "launcher.h"
+
+#include <asm-generic/ioctls.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
-#include "launcher.h"
+
+// Shared globals
+int launcher_color = -1;
+
+// Private functions
+static int has_colour();
+static char *waiting_color();
+static char *passed_color();
+static char *failed_color();
+static char *stop_color();
+
+// Private vars
+// static char BLEU[] = { (char) 27, '[', '3', '4', 'm', '\0' };
+// static char TEAL[] = { (char) 27, '[', '3', '6', 'm', '\0' };
+// static char GRIS[] = { (char) 27, '[', '3', '7', 'm', '\0' };
+static char VERT[] = { (char) 27, '[', '3', '2', 'm', '\0' };
+static char ROUGE[] = { (char) 27, '[', '3', '1', 'm', '\0' };
+static char ORANGE[] = { (char) 27, '[', '3', '3', 'm', '\0' };
+static char STOP[] = { (char) 27, '[', '0', 'm', '\0' };
+static char bs9[] = { 8, 8, 8, 8, 8, 8, 8, 8, 8, '\0' };
 
 // CK_ENV : Gets the print mode from the environment variable CK_VERBOSITY,
 // which can have the values "silent", "minimal", "normal", "verbose". If the
@@ -48,7 +69,7 @@
 
 char *tests_name = NULL;
 
-void test_init(const char * const name) {
+void test_init(const char name[]) {
 	int i;
 	int cols;
 	struct winsize ws;
@@ -69,41 +90,27 @@ void test_init(const char * const name) {
 
 	strcpy(tests_name + 4, name);
 	tests_name[strlen(name) + 4] = ' ';
-
-	strcpy(tests_name + cols - 6 - 1 - 4, " [ ?? ]    ");
+	tests_name[cols - 6 - 1 - 4] = '\0';
 
 	fprintf(stderr, "%s", tests_name);
+	fprintf(stderr, "%s[%s%s%s]    ", " ", waiting_color(), " ?? ",
+			stop_color());
 }
 
 void test_success() {
-	fprintf(stderr, "%s", " OK ]    ");
+	fprintf(stderr, "%s[%s%s%s]    ", bs9, passed_color(), " OK ",
+			stop_color());
 }
 
 void test_failure() {
-	fprintf(stderr, "%s", "FAIL]    ");
+	fprintf(stderr, "%s[%s%s%s]    ", bs9, failed_color(), "FAIL",
+			stop_color());
 }
 
-int main(int argc, char **argv) {
+int test_start(int more) {
 	int failed;
 	SRunner *runner;
-	int more;
 
-	if (argc > 1 && !strcmp("--name", argv[1])) {
-		test_init(argv[2]);
-		return 0;
-	}
-	if (argc > 1 && !strcmp("--passed", argv[1])) {
-		test_success();
-		return 0;
-	}
-	if (argc > 1 && !strcmp("--failed", argv[1])) {
-		test_failure();
-		return 0;
-	}
-
-	more = 0;
-	if (argc > 1 && !strcmp("--more", argv[1]))
-		more = 1;
 	runner = get_tests(more);
 
 	failed = 0;
@@ -119,3 +126,71 @@ int main(int argc, char **argv) {
 	return failed;
 }
 
+int main(int argc, char **argv) {
+	int more = 0;
+	int cont = 1;
+
+	for (int i = 1; i < argc; i++) {
+		if (!strcmp("--name", argv[i])) {
+			if ((i + 1) >= argc)
+				return 1;
+			test_init(argv[++i]);
+			cont = 0;
+		} else if (!strcmp("--passed", argv[i])) {
+			test_success();
+			cont = 0;
+		} else if (!strcmp("--failed", argv[i])) {
+			if ((i + 1) >= argc)
+				return 1;
+			test_failure();
+			cont = 0;
+		} else if (!strcmp("--more", argv[i])) {
+			if ((i + 1) >= argc)
+				return 1;
+			more = 1;
+		} else if (!strcmp("--color", argv[i])) {
+			launcher_color = 1;
+		} else if (!strcmp("--no-color", argv[i])) {
+			launcher_color = 0;
+		}
+	}
+
+	if (!cont)
+		return 0;
+
+	return test_start(more);
+}
+
+static int has_colour() {
+	if (launcher_color == -1) {
+		// TODO: detect if terminal supports colour mode
+		// for instance, check if $COLORTERM is not empty?
+		launcher_color = 1;
+	}
+
+	return launcher_color;
+}
+
+static char *waiting_color() {
+	if (has_colour())
+		return ORANGE;
+	return "";
+}
+
+static char *passed_color() {
+	if (has_colour())
+		return VERT;
+	return "";
+}
+
+static char *failed_color() {
+	if (has_colour())
+		return ROUGE;
+	return "";
+}
+
+static char *stop_color() {
+	if (has_colour())
+		return STOP;
+	return "";
+}

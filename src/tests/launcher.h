@@ -30,9 +30,13 @@ ck_abort_msg("%s\n\tExpected: %lld\n\tReceived: %lld", title, (long long)expecte
 ck_abort_msg("%s\n\tExpected: %zu\n\tReceived: %zu", title, expected, received); \
 }
 
+extern int launcher_color;
+
 SRunner *get_tests(int more);
 
-void test_init(const char * const name);
+void test_init(const char name[]);
+
+int test_start(int more);
 
 void test_success();
 
