@@ -407,6 +407,186 @@ START(clear)
 		if (s->length)
 			FAIL("empty cstring has a size of %zu", s->length);
 
+		cstring_add(s, "testy");
+		cstring_clear(s);
+		if (s->length)
+			FAIL("cleared cstring has a size of %zu", s->length);
+
+		END
+
+START(convert)
+		char *str;
+
+		str = cstring_convert(s);
+		s = NULL;
+
+		ASSERT_EQUALS_STR("Convert failed with an empty string", "", str);
+
+		reset();
+
+		cstring_add(s, "testy");
+		str = cstring_convert(s);
+		s = NULL;
+		ASSERT_EQUALS_STR("Convert did not return the same string", "testy",
+				str);
+
+		END
+
+START(clone)
+		cstring *clone;
+
+		clone = cstring_clone(NULL);
+		if (clone)
+			FAIL("Cloning NULL must return NULL");
+
+		clone = cstring_clone(s);
+		ASSERT_EQUALS_STR("Cannot clone the empty string", "", clone->string);
+		free_cstring(clone);
+
+		cstring_add(s, "Testy viva la vida");
+		clone = cstring_clone(s);
+		ASSERT_EQUALS_STR("Failed to clone the string", s->string,
+				clone->string);
+		free_cstring(clone);
+
+		END
+
+START(rtrim)
+		char *expected;
+
+		expected = "testy";
+		cstring_add(s, expected);
+		cstring_add(s, "  ");
+
+		cstring_rtrim(s, ' ');
+		ASSERT_EQUALS_STR("(a) Failed to rtrim", expected, s->string);
+
+		reset();
+
+		expected = "   testy";
+		cstring_add(s, expected);
+		cstring_add(s, "  ");
+
+		cstring_rtrim(s, ' ');
+		ASSERT_EQUALS_STR("(b) Failed to rtrim", expected, s->string);
+
+		reset();
+
+		expected = "   testy   ";
+		cstring_add(s, expected);
+		cstring_add(s, "...");
+
+		cstring_rtrim(s, '.');
+		ASSERT_EQUALS_STR("(c) Failed to rtrim", expected, s->string);
+
+		reset();
+
+		expected = "...testy   ";
+		cstring_add(s, expected);
+		cstring_add(s, "...");
+
+		cstring_rtrim(s, '.');
+		ASSERT_EQUALS_STR("(d) Failed to rtrim", expected, s->string);
+
+		END
+
+START(trim)
+		char *expected;
+
+		expected = "testy";
+		cstring_add(s, expected);
+		cstring_add(s, "  ");
+
+		cstring_trim(s, ' ');
+		ASSERT_EQUALS_STR("(a) Failed to trim", expected, s->string);
+
+		reset();
+
+		expected = "testy";
+		cstring_add(s, "  ");
+		cstring_add(s, expected);
+		cstring_add(s, "  ");
+
+		cstring_trim(s, ' ');
+		ASSERT_EQUALS_STR("(b) Failed to trim", expected, s->string);
+
+		reset();
+
+		expected = "   testy   ";
+		cstring_add(s, expected);
+		cstring_add(s, "...");
+
+		cstring_trim(s, '.');
+		ASSERT_EQUALS_STR("(c) Failed to trim", expected, s->string);
+
+		reset();
+
+		expected = "   testy   ";
+		cstring_add(s, "...");
+		cstring_add(s, expected);
+		cstring_add(s, "...");
+
+		cstring_trim(s, '.');
+		ASSERT_EQUALS_STR("(d) Failed to trim", expected, s->string);
+
+		END
+
+START(toupper)
+		cstring_add(s, "");
+		cstring_toupper(s);
+		ASSERT_EQUALS_STR("Failed to uppercase empty", "", s->string);
+
+		reset();
+
+		cstring_add(s, "Simple Testy");
+		cstring_toupper(s);
+		ASSERT_EQUALS_STR("Failed to uppercase", "SIMPLE TESTY", s->string);
+
+		reset();
+
+		cstring_add(s, "C'est l'été");
+		cstring_toupper(s);
+		ASSERT_EQUALS_STR("Failed to uppercase", "C'EST L'ÉTÉ", s->string);
+
+		reset();
+
+		cstring_add(s, "Test en français");
+		cstring_toupper(s);
+		ASSERT_EQUALS_STR("Failed to uppercase", "TEST EN FRANÇAIS", s->string);
+
+		END
+
+START(tolower)
+		cstring_add(s, "");
+		cstring_tolower(s);
+		ASSERT_EQUALS_STR("Failed to lowercase empty", "", s->string);
+
+		reset();
+
+		cstring_add(s, "Simple Testy");
+		cstring_tolower(s);
+		ASSERT_EQUALS_STR("Failed to lowercase", "simple testy", s->string);
+
+		reset();
+
+		cstring_add(s, "Été ! C'est l'été !");
+		cstring_tolower(s);
+		ASSERT_EQUALS_STR("Failed to lowercase", "été ! c'est l'été !",
+				s->string);
+
+		reset();
+
+		cstring_add(s, "Test en français");
+		cstring_tolower(s);
+		ASSERT_EQUALS_STR("Failed to lowercase", "test en français", s->string);
+
+		reset();
+
+		cstring_add(s, "À la claire fontaine");
+		cstring_tolower(s);
+		ASSERT_EQUALS_STR("Failed to lowercase", "à la claire fontaine",
+				s->string);
+
 		END
 
 START(readln)
@@ -467,8 +647,14 @@ Suite *test_cstring(const char title[]) {
 	tcase_add_test(core, ends_with);
 	tcase_add_test(core, find);
 	tcase_add_test(core, rfind);
-
 	tcase_add_test(core, clear);
+	tcase_add_test(core, convert);
+	tcase_add_test(core, clone);
+	tcase_add_test(core, rtrim);
+	tcase_add_test(core, trim);
+	tcase_add_test(core, toupper);
+	tcase_add_test(core, tolower);
+
 	tcase_add_test(core, readln);
 
 	suite_add_tcase(suite, core);

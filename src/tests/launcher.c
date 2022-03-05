@@ -45,9 +45,12 @@ static char ORANGE[] = { (char) 27, '[', '3', '3', 'm', '\0' };
 static char STOP[] = { (char) 27, '[', '0', 'm', '\0' };
 static char bs9[] = { 8, 8, 8, 8, 8, 8, 8, 8, 8, '\0' };
 
+// COLORTERM : if it exists and is not empty, the system will default to
+// colour mode (--color) as opposed to --no-color
+
 // CK_ENV : Gets the print mode from the environment variable CK_VERBOSITY,
 // which can have the values "silent", "minimal", "normal", "verbose". If the
-// variable is not found or the value is not recognized, the print mode is set
+// variable is not found or the value is not recognised, the print mode is set
 // to CK_NORMAL.
 
 // How to start the program:
@@ -163,9 +166,12 @@ int main(int argc, char **argv) {
 
 static int has_colour() {
 	if (launcher_color == -1) {
-		// TODO: detect if terminal supports colour mode
-		// for instance, check if $COLORTERM is not empty?
-		launcher_color = 1;
+		// TODO: could we do better?
+		const char *cterm = getenv("COLORTERM");
+		if (cterm && cterm[0])
+			launcher_color = 1;
+		else
+			launcher_color = 0;
 	}
 
 	return launcher_color;
