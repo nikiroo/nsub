@@ -1,7 +1,7 @@
 /*
  * CUtils: some small C utilities
  *
- * Copyright (C) 2012 Niki Roo
+ * Copyright (C) 2011 Niki Roo
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,10 +19,10 @@
 
 /*
  Name:        cstring.c
- Copyright:   niki (cc-by-nc) 2011
+ Copyright:   niki (gpl3 or later) 2011
  Author:      niki
  Date:        2011-06-16
- Description: cstring is a collection of helper functions to manipulate string of text
+ Description: cstring is a collection of helper functions to manipulate text
  */
 
 #include "cstring.h"
@@ -32,6 +32,9 @@
 #include <string.h>
 #include <wchar.h>
 #include <wctype.h>
+
+// For upper/lowercase
+#include <locale.h>
 
 #ifndef BUFFER_SIZE
 #define BUFFER_SIZE 81
@@ -43,7 +46,7 @@
 #define CSTRING_SEP '/'
 #endif
 
-//start of private prototypes
+// Private functions
 
 typedef struct {
 	size_t buffer_length;
@@ -53,8 +56,14 @@ typedef struct {
 static void cstring_swap(cstring *a, cstring *b);
 /** Change the case to upper -or- lower case (UTF8-compatible) */
 static void cstring_change_case(cstring *self, int up);
+/** For path-related functions */
+static void normalize_path(cstring *self);
 
-//end of private prototypes
+// Private variables
+
+static char *locale = NULL;
+
+// end of privates
 
 cstring *new_cstring() {
 	cstring *string;
@@ -334,16 +343,15 @@ int cstring_replace(cstring *self, const char from[], const char to[]) {
 	cstring *buffer;
 	size_t i;
 	size_t step;
-	char *swap;
 	int occur;
 
-	// easy optimization:
+	// easy optimisation:
 	if (!from || !from[0])
 		return 0;
 	if (from && to && from[0] && to[0] && !from[1] && !to[1])
 		return cstring_replace_car(self->string, from[0], to[0]);
 
-	// optimize for same-size strings?
+	// optimise for same-size strings?
 
 	step = strlen(from) - 1;
 	buffer = new_cstring();
@@ -358,12 +366,7 @@ int cstring_replace(cstring *self, const char from[], const char to[]) {
 		}
 	}
 
-	// not clean, but quicker:
-	swap = self->string;
-	self->string = buffer->string;
-	buffer->string = swap;
-	self->length = buffer->length;
-
+	cstring_swap(self, buffer);
 	free_cstring(buffer);
 	return occur;
 }
@@ -459,12 +462,12 @@ char *cstring_convert(cstring *self) {
 	return string;
 }
 
-cstring *cstring_clone(cstring *self) {
+cstring *cstring_clone(const char self[]) {
 	if (self == NULL)
 		return NULL;
 
 	cstring *clone = new_cstring();
-	cstring_add(clone, self->string);
+	cstring_add(clone, self);
 
 	return clone;
 }
@@ -497,27 +500,16 @@ void cstring_trim(cstring *self, char car) {
 	}
 }
 
-size_t cstring_remove_crlf(cstring *self) {
-	size_t removed;
+size_t cstring_remove_crlf(char *self) {
+	size_t sz = strlen(self);
+	if (sz && self[sz - 1] == '\n')
+		sz--;
+	if (sz && self[sz - 1] == '\r')
+		sz--;
 
-	removed = cstring_sremove_crlf(self->string, self->length);
-	self->length -= removed;
+	self[sz] = '\0';
 
-	return removed;
-}
-
-size_t cstring_sremove_crlf(char data[], size_t n) {
-	size_t removed;
-
-	removed = n;
-	while (removed > 0
-			&& (data[removed - 1] == '\r' || data[removed - 1] == '\n')) {
-		removed--;
-	}
-
-	data[removed] = '\0';
-
-	return removed;
+	return sz;
 }
 
 void cstring_toupper(cstring *self) {
@@ -529,30 +521,75 @@ void cstring_tolower(cstring *self) {
 }
 
 void cstring_change_case(cstring *self, int up) {
-	wchar_t *wide;
-	char tmp[10];
-	const char *src = self->string;
-	size_t s, i;
-	mbstate_t state;
-
-	// init the state (passing NULL is not thread-safe)
-	memset(&state, '\0', sizeof(mbstate_t));
-
-	// won't contain MORE chars (but maybe less)
-	wide = (wchar_t *) malloc((self->length + 1) * sizeof(wchar_t));
-	s = mbsrtowcs(wide, &src, self->length, &state);
-	wide[s] = (wchar_t) '\0';
-	cstring_clear(self);
-	for (i = 0; i <= s; i++) {
-		if (up)
-			wide[i] = (wchar_t) towupper((wint_t) wide[i]);
-		else
-			wide[i] = (wchar_t) towlower((wint_t) wide[i]);
-		memset(&state, '\0', sizeof(mbstate_t));
-		wcrtomb(tmp, wide[i], &state);
-		cstring_add(self, tmp);
+	// Change LC_ALL to LANG if not found
+	// TODO: only take part we need (also, this is still bad practise)
+	if (!locale) {
+		locale = setlocale(LC_ALL, NULL);
+		if (!locale || !locale[0] || !strcmp("C", locale)) {
+			char *lang = getenv("LANG");
+			if (lang && lang[0]) {
+				locale = setlocale(LC_ALL, lang);
+				if (!locale)
+					locale = "";
+			}
+		}
 	}
-	free(wide);
+
+	cstring *rep;
+	mbstate_t state_from, state_to;
+	wchar_t wide;
+	char tmp[10];
+	size_t count;
+
+	// init the state (NULL = internal hidden state, not thread-safe)
+	memset(&state_from, '\0', sizeof(mbstate_t));
+	memset(&state_to, '\0', sizeof(mbstate_t));
+
+	rep = new_cstring();
+
+	size_t i = 0;
+	while (i < self->length) {
+		count = mbrtowc(&wide, self->string + i, self->length - i, &state_from);
+
+		//incomplete (should not happen)
+		if (count == (size_t) -2) {
+			// return;
+			cstring_add_car(rep, '_');
+			i++;
+			continue;
+		}
+		// invalid multibyte sequence
+		if (count == (size_t) -1) {
+			// return;
+			cstring_add_car(rep, '_');
+			i++;
+			continue;
+		}
+
+		// End of String (should not happen, see WHILE condition)
+		if (!count)
+			break;
+
+		// char is ok
+		i += count;
+
+		if (up)
+			wide = (wchar_t) towupper((wint_t) wide);
+		else
+			wide = (wchar_t) towlower((wint_t) wide);
+
+		count = wcrtomb(tmp, wide, &state_to);
+		if (count == (size_t) -1) {
+			// failed to convert :(
+			cstring_add_car(rep, '_');
+		} else {
+			tmp[count] = '\0';
+			cstring_add(rep, tmp);
+		}
+	}
+
+	cstring_swap(self, rep);
+	free_cstring(rep);
 }
 
 int cstring_readline(cstring *self, FILE *file) {
@@ -570,26 +607,25 @@ int cstring_readline(cstring *self, FILE *file) {
 		cstring_clear(self);
 		buffer[0] = '\0';
 
-		// Note: strlen() could return 0 if the file contains \0
-		// at the start of a line
+		// Note: fgets() could return NULL if EOF is reached
 		if (!fgets(buffer, (int) BUFFER_SIZE - 1, file))
 			return 0;
-		size = strlen(buffer);
 
+		size = strlen(buffer);
 		full_line = ((file && feof(file)) || size == 0
 				|| buffer[size - 1] == '\n');
-		size -= cstring_sremove_crlf(buffer, size);
+		size = cstring_remove_crlf(buffer);
 		cstring_add(self, buffer);
 
 		// No luck, we need to continue getting data
 		while (!full_line) {
 			if (!fgets(buffer, (int) BUFFER_SIZE - 1, file))
 				break;
-			size = strlen(buffer);
 
+			size = strlen(buffer);
 			full_line = ((file && feof(file)) || size == 0
 					|| buffer[size - 1] == '\n');
-			size -= cstring_sremove_crlf(buffer, size);
+			size = cstring_remove_crlf(buffer);
 			cstring_add(self, buffer);
 		}
 
@@ -599,78 +635,81 @@ int cstring_readline(cstring *self, FILE *file) {
 	return 0;
 }
 
+static void normalize_path(cstring *self) {
+	while (self->length && self->string[self->length - 1] == CSTRING_SEP)
+		self->length--;
+	self->string[self->length] = '\0';
+}
+
 void cstring_add_path(cstring *self, const char subpath[]) {
+	while (self->length && self->string[self->length - 1] == CSTRING_SEP)
+		self->length--;
 	cstring_add_car(self, CSTRING_SEP);
-	cstring_add(self, subpath);
+	if (subpath && subpath[0]) {
+		cstring_add(self, subpath);
+	}
+
+	normalize_path(self);
 }
 
 int cstring_pop_path(cstring *self, int how_many) {
-	char sep[] = { CSTRING_SEP };
 	int count = 0;
+	size_t tmp;
+	char first = '\0';
 
-	cstring_rtrim(self, CSTRING_SEP);
+	if (self->length)
+		first = self->string[0];
+
+	normalize_path(self);
 	for (int i = 0; i < how_many; i++) {
-		size_t idx = cstring_rfind(self->string, sep, 0);
-		if (!idx)
-			break;
-
-		cstring_cut_at(self, idx - 1);
-		count++;
+		tmp = self->length;
+		while (self->length && self->string[self->length - 1] != CSTRING_SEP)
+			self->length--;
+		while (self->length && self->string[self->length - 1] == CSTRING_SEP)
+			self->length--;
+		if (self->length != tmp)
+			count++;
 	}
+	normalize_path(self);
+
+	// Root is root of root
+	if (first == CSTRING_SEP && !self->length)
+		cstring_add_car(self, CSTRING_SEP);
 
 	return count;
 }
 
-cstring *cstring_getdir(const char path[]) {
-	cstring *result;
+char *cstring_basename(const char path[], const char ext[]) {
 	size_t i;
-
 	size_t sz = strlen(path);
 
-	i = sz - 1;
-	if (i >= 0 && path[i] == CSTRING_SEP)
+	i = sz;
+	while (i && path[i] != CSTRING_SEP)
 		i--;
-	for (; i >= 0 && path[i] != CSTRING_SEP; i--)
-		;
 
-	if (i < 0)
-		return new_cstring();
+	cstring *rep;
+	if (path[i] != CSTRING_SEP) {
+		rep = cstring_clone(path);
+	} else {
+		rep = new_cstring();
+		cstring_addf(rep, path, i + 1);
+	}
 
-	result = new_cstring();
-	cstring_addn(result, path, i);
+	if (ext && ext[0] && cstring_ends_with(rep->string, ext)) {
+		cstring_cut_at(rep, rep->length - strlen(ext));
+	}
 
-	return result;
+	return cstring_convert(rep);
 }
 
-cstring *cstring_getfile(cstring *path) {
-	cstring *result;
-	ssize_t i;
-
-	i = (ssize_t) path->length - 1;
-	if (i >= 0 && path->string[i] == CSTRING_SEP)
-		i--;
-	for (; i >= 0 && path->string[i] != CSTRING_SEP; i--)
-		;
-
-	if (i < 0 || (size_t) (i + 1) >= path->length)
-		return new_cstring();
-
-	result = new_cstring();
-	cstring_add(result, path->string + i + 1);
-	return result;
+char *cstring_dirname(const char path[]) {
+	cstring *rep = cstring_clone(path);
+	cstring_pop_path(rep, 1);
+	return cstring_convert(rep);
 }
 
-cstring *cstring_getfiles(const char path[]) {
-	cstring *copy = new_cstring();
-	cstring_add(copy, path);
-
-	cstring *result = cstring_getfile(copy);
-
-	free_cstring(copy);
-
-	return result;
-}
-
-int cstring_is_whole(cstring *self) {
-	return mbstowcs(NULL, self->string, 0) != (size_t) -1;
+int cstring_is_utf8(cstring *self) {
+	size_t rep = mbstowcs(NULL, self->string, 0);
+	// -2 = invalid, -1 = not whole
+	return (rep != (size_t) -2) && (rep != (size_t) -1);
 }

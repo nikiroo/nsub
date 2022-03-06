@@ -323,7 +323,7 @@ char *cstring_convert(cstring *self);
  *
  * @param self the string to clone
  */
-cstring *cstring_clone(cstring *self);
+cstring *cstring_clone(const char self[]);
 
 /**
  * Trim this cstring of all trailing 'car' instances.
@@ -347,8 +347,20 @@ void cstring_rtrim(cstring *self, char car);
 void cstring_trim(cstring *self, char car);
 
 /**
+ * Remove the \r and \n sequence (or one OR the other) at the end of the string.
+ *
+ * @param self the string to change
+ *
+ * @return the new length of the string
+ */
+size_t cstring_remove_crlf(char *self);
+
+/**
  * Change the case to upper-case (UTF-8 compatible, but the string MUST be
  * whole).
+ *
+ * @note: if LC_ALL is not set or is set to C and a viable $LANG exists, it will
+ * 		set LC_ALL to $LANG
  *
  * @param self the cstring to work on
  */
@@ -357,6 +369,9 @@ void cstring_toupper(cstring *self);
 /**
  * Change the case to lower-case (UTF-8 compatible, but the string MUST be
  * whole).
+ *
+ * @note: if LC_ALL is not set or is set to C and a viable $LANG exists, it will
+ * 		set LC_ALL to $LANG
  *
  * @param self the cstring to work on
  */
@@ -373,16 +388,6 @@ void cstring_tolower(cstring *self);
 int cstring_readline(cstring *self, FILE *file);
 
 /**
- * Read a whole line (CR, LN or CR+LN terminated) from the given socket.
- *
- * @param self the cstring to read into
- * @param fd the socket to read from
- *
- * @return 1 if a line was read, 0 if not
- */
-int cstring_readnet(cstring *self, int fd);
-
-/**
  * Add a path to the given cstring (if it is currently empty, it
  * will result in a root path).
  *
@@ -394,7 +399,16 @@ int cstring_readnet(cstring *self, int fd);
  */
 void cstring_add_path(cstring *self, const char subpath[]);
 
-//TODO: desc
+/**
+ * Remove the <tt>how_many</tt> components of the path described by this
+ * cstring. Will ignore extra path separators and always trim it from the final
+ * result (i.e., <tt>some//path/</tt> is identical to <tt>some/path</tt>).
+ *
+ * @note popping "0" path will simply make sure the string does not end in "/"
+ *
+ * @param how_many how many path components to remove (for instance, to go from
+ * 		<tt>/some/path/to/file</tt> to <tt>/some/path</tt> you would need 2)
+ */
 int cstring_pop_path(cstring *self, int how_many);
 
 /**
@@ -402,10 +416,13 @@ int cstring_pop_path(cstring *self, int how_many);
  * '/home/user/file.ext' becomes 'file.ext').
  *
  * @param path the path to get the dir of (it can be a dir itself)
+ * @param ext the extension to remove if any (can be empty or NULL for none)
+ *
+ * @note the extension should include the "." if any
  *
  * @return a new string representing the parent directory
  */
-char *cstring_basename(const char path[]);
+char *cstring_basename(const char path[], const char ext[]);
 
 /**
  * Return the dirname of this path (for instance,
@@ -418,49 +435,12 @@ char *cstring_basename(const char path[]);
 char *cstring_dirname(const char path[]);
 
 /**
- * Return the latest path component of this path (usually a FILE).
- *
- * @param path the path to get the basename of (it can be a dir itself)
- *
- * @return a new cstring representing the latest path component
- */
-cstring *cstring_getfile(cstring *path);
-
-/**
- * Return the latest path component of this path (usually a FILE).
- *
- * @param path the path to get the basename of (it can be a dir itself)
- *
- * @return a new string representing the latest path component
- */
-cstring *cstring_getfiles(const char path[]);
-
-/**
- * Remove all the \r and \n at the end of the given cstring.
- *
- * @param self the cstring to change
- *
- * @return how many removed characters
- */
-size_t cstring_remove_crlf(cstring *self);
-
-/**
- * Remove all the \r and \n at the end of the given string.
+ * Check if the string is a correct and whole UTF-8 string (i.e., it is indeed
+ * an UTF-8 string and doesn't contain incomplete UTF-8 sequences).
  * 
- * @param self the string to change
- * @param n the size of the string
- *
- * @return how many removed characters
+ * @return TRUE if it is UTF-8
  */
-size_t cstring_sremove_crlf(char *self, size_t n);
-
-/**
- * Check if the string is whole (i.e., it doesn't contain incomplete UTF-8
- * sequences).
- * 
- * @return TRUE if it is whole
- */
-int cstring_is_whole(cstring *self);
+int cstring_is_utf8(cstring *self);
 
 #endif
 

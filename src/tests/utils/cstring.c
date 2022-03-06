@@ -17,10 +17,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <stdlib.h>
+
 #include "launcher.h"
 #include "utils/cstring.h"
 
-#define TEST_FILE_READLN "utils/test_readln.txt"
+#define TEST_FILE_READLINE "utils/test_readline.txt"
 
 cstring *s;
 
@@ -77,8 +79,8 @@ START(add_all_but_p)
 		ASSERT_EQUALS_STR("Multi-line", str, s->string);
 		reset();
 
-		str =
-				"Les accents en français sont bien là et se retrouvent avec une fréquence élevée";
+		str = "Les accents en français sont bien là et se "
+				"retrouvent avec une fréquence élevée";
 		cstring_add(s, str);
 		ASSERT_EQUALS_STR("accents", str, s->string);
 		reset();
@@ -439,12 +441,12 @@ START(clone)
 		if (clone)
 			FAIL("Cloning NULL must return NULL");
 
-		clone = cstring_clone(s);
+		clone = cstring_clone("");
 		ASSERT_EQUALS_STR("Cannot clone the empty string", "", clone->string);
 		free_cstring(clone);
 
 		cstring_add(s, "Testy viva la vida");
-		clone = cstring_clone(s);
+		clone = cstring_clone(s->string);
 		ASSERT_EQUALS_STR("Failed to clone the string", s->string,
 				clone->string);
 		free_cstring(clone);
@@ -531,6 +533,44 @@ START(trim)
 
 		END
 
+START(remove_crlf)
+		char *str = "testy";
+
+		cstring_add(s, str);
+		s->length = cstring_remove_crlf(s->string);
+		ASSERT_EQUALS_STR("no-op failed", str, s->string);
+
+		reset();
+		cstring_add(s, str);
+		cstring_add(s, "\n");
+		s->length = cstring_remove_crlf(s->string);
+		ASSERT_EQUALS_STR("\\n failed", str, s->string);
+
+		reset();
+		cstring_add(s, str);
+		cstring_add(s, "\r\n");
+		s->length = cstring_remove_crlf(s->string);
+		ASSERT_EQUALS_STR("\\r\\n failed", str, s->string);
+
+		reset();
+		cstring_add(s, str);
+		cstring_add(s, "\n\n");
+		s->length = cstring_remove_crlf(s->string);
+		ASSERT_EQUALS_STR("\\n\\n failed", "testy\n", s->string);
+
+		reset();
+		cstring_add(s, str);
+		cstring_add(s, "\r\n\r\n");
+		s->length = cstring_remove_crlf(s->string);
+		ASSERT_EQUALS_STR("\\r\\n\\r\\n failed", "testy\r\n", s->string);
+
+		reset();
+		cstring_add(s, "\n");
+		s->length = cstring_remove_crlf(s->string);
+		ASSERT_EQUALS_STR("\\n uniq failed", "", s->string);
+
+		END
+
 START(toupper)
 		cstring_add(s, "");
 		cstring_toupper(s);
@@ -589,9 +629,9 @@ START(tolower)
 
 		END
 
-START(readln)
+START(readline)
 		int read;
-		FILE *testin = fopen(TEST_FILE_READLN, "r");
+		FILE *testin = fopen(TEST_FILE_READLINE, "r");
 		if (!testin)
 			FAIL("Test file not found: test_readln.txt");
 
@@ -616,6 +656,121 @@ START(readln)
 		if (cstring_readline(s, testin)) {
 			FAIL("fourth line should not exist");
 		}
+
+		END
+
+START(add_path)
+		cstring_add_path(s, "root");
+		ASSERT_EQUALS_STR("failed to create root path", "/root", s->string);
+
+		cstring_add_path(s, "dir");
+		ASSERT_EQUALS_STR("failed to add a dir", "/root/dir", s->string);
+
+		cstring_add_path(s, "sub/");
+		ASSERT_EQUALS_STR("extra / failed", "/root/dir/sub", s->string);
+
+		END
+
+START(pop_path)
+		cstring_add(s, "");
+		ASSERT_EQUALS_INT("empty test failed", 0, cstring_pop_path(s, 1));
+
+		reset();
+		cstring_add(s, "root");
+		ASSERT_EQUALS_INT("0 nbr test failed", 0, cstring_pop_path(s, 0));
+		ASSERT_EQUALS_STR("0 test failed", "root", s->string);
+
+		reset();
+		cstring_add(s, "root/");
+		ASSERT_EQUALS_INT("0² nbr test failed", 0, cstring_pop_path(s, 0));
+		ASSERT_EQUALS_STR("0² test failed", "root", s->string);
+
+		reset();
+		cstring_add(s, "/");
+		ASSERT_EQUALS_INT("root test nbr failed", 0, cstring_pop_path(s, 1));
+		ASSERT_EQUALS_STR("root test failed", "/", s->string);
+
+		reset();
+		cstring_add(s, "/");
+		ASSERT_EQUALS_INT("root² test nbr failed", 0, cstring_pop_path(s, 2));
+		ASSERT_EQUALS_STR("root² test failed", "/", s->string);
+
+		reset();
+		cstring_add(s, "/root");
+		ASSERT_EQUALS_INT("/root test nbr failed", 1, cstring_pop_path(s, 1));
+		ASSERT_EQUALS_STR("/root test failed", "/", s->string);
+
+		reset();
+		cstring_add(s, "/root");
+		ASSERT_EQUALS_INT("/root³ test nbr failed", 1, cstring_pop_path(s, 2));
+		ASSERT_EQUALS_STR("/root³ test failed", "/", s->string);
+
+		reset();
+		cstring_add(s, "/root/dir/file");
+		ASSERT_EQUALS_INT("2 test nbr failed", 2, cstring_pop_path(s, 2));
+		ASSERT_EQUALS_STR("2 test failed", "/root", s->string);
+
+		reset();
+		cstring_add(s, "/root/dir/file/");
+		ASSERT_EQUALS_INT("trailing / test nbr failed", 1,
+				cstring_pop_path(s, 1));
+		ASSERT_EQUALS_STR("trailing / test failed", "/root/dir", s->string);
+
+		END
+
+START(basename)
+		char *str;
+
+		cstring_add(s, "");
+		str = cstring_basename(s->string, NULL);
+		ASSERT_EQUALS_STR("empty test", "", str);
+		free(str);
+
+		reset();
+		cstring_add(s, "/root/path/dir/file");
+		str = cstring_basename(s->string, NULL);
+		ASSERT_EQUALS_STR("simple test", "file", str);
+		free(str);
+
+		reset();
+		cstring_add(s, "/root/path/dir/file");
+		str = cstring_basename(s->string, ".ext");
+		ASSERT_EQUALS_STR("no ext test", "file", str);
+		free(str);
+
+		reset();
+		cstring_add(s, "/root/path/dir/file.test");
+		str = cstring_basename(s->string, ".ext");
+		ASSERT_EQUALS_STR("wrong ext test", "file.test", str);
+		free(str);
+
+		reset();
+		cstring_add(s, "/root/path/dir/file.ext");
+		str = cstring_basename(s->string, ".ext");
+		ASSERT_EQUALS_STR("good ext test", "file", str);
+		free(str);
+
+		END
+
+START(dirname)
+		char *str;
+
+		cstring_add(s, "/root/path");
+		str = cstring_dirname(s->string);
+		ASSERT_EQUALS_STR("simple test", "/root", str);
+		free(str);
+
+		reset();
+		cstring_add(s, "/root/path/");
+		str = cstring_dirname(s->string);
+		ASSERT_EQUALS_STR("trailing / test", "/root", str);
+		free(str);
+
+		reset();
+		cstring_add(s, "/");
+		str = cstring_dirname(s->string);
+		ASSERT_EQUALS_STR("root is root of root test", "/", str);
+		free(str);
 
 		END
 
@@ -652,10 +807,14 @@ Suite *test_cstring(const char title[]) {
 	tcase_add_test(core, clone);
 	tcase_add_test(core, rtrim);
 	tcase_add_test(core, trim);
+	tcase_add_test(core, remove_crlf);
 	tcase_add_test(core, toupper);
 	tcase_add_test(core, tolower);
-
-	tcase_add_test(core, readln);
+	tcase_add_test(core, readline);
+	tcase_add_test(core, add_path);
+	tcase_add_test(core, pop_path);
+	tcase_add_test(core, basename);
+	tcase_add_test(core, dirname);
 
 	suite_add_tcase(suite, core);
 
