@@ -143,8 +143,6 @@ int main(int argc, char **argv) {
 			test_success();
 			cont = 0;
 		} else if (!strcmp("--failed", argv[i])) {
-			if ((i + 1) >= argc)
-				return 1;
 			test_failure();
 			cont = 0;
 		} else if (!strcmp("--more", argv[i])) {
