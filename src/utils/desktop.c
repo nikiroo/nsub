@@ -38,10 +38,10 @@ struct {
 	int id;
 }typedef desktop_p;
 
-/* PRIVATE FUNCTIONS */
-int desktop_compare(const void *a, const void* b);
-char *desktop_concat(const char str1[], ...);
-int desktop_test_file(const char filename[]);
+/* Private functions */
+static int desktop_compare(const void *a, const void* b);
+static char *desktop_concat(const char str1[], ...);
+static int desktop_test_file(const char filename[]);
 /* */
 
 desktop *new_desktop(const char filename[], int best_size) {
@@ -255,9 +255,9 @@ desktop *desktop_find_id(array *children, int id) {
 	return found;
 }
 
-/* PRIVATE FUNCTIONS */
+/* Private functions */
 
-char *desktop_concat(const char str1[], ...) {
+static char *desktop_concat(const char str1[], ...) {
 	va_list args;
 	size_t total;
 	size_t prec;
@@ -287,7 +287,7 @@ char *desktop_concat(const char str1[], ...) {
 	return rep;
 }
 
-int desktop_compare(const void *a, const void* b) {
+static int desktop_compare(const void *a, const void* b) {
 	desktop_p *me1 = ((desktop_p**) a)[0];
 	desktop_p *me2 = ((desktop_p**) b)[0];
 
@@ -299,7 +299,7 @@ int desktop_compare(const void *a, const void* b) {
 	return strcmp(me1->name, me2->name);
 }
 
-int desktop_test_file(const char filename[]) {
+static int desktop_test_file(const char filename[]) {
 	FILE *test;
 	DIR *test_dir;
 
@@ -325,8 +325,8 @@ int desktop_test_file(const char filename[]) {
 		free(tmp); \
 	} while(0)
 
-char *theme = NULL;
-char *ltheme = NULL;
+static char *theme = NULL;
+static char *ltheme = NULL;
 char *desktop_find_icon(const char basename[], int icon_size) {
 	char *tmp = NULL;
 	char *home = getenv("HOME");
