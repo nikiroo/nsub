@@ -1,4 +1,4 @@
-# Note: 99+ required for-loop initial declaration (CentOS 6)
+# Note: 99+ required for for-loop initial declaration (CentOS 6)
 # Note: gnu required for net.c/net.h
 
 CFLAGS   += -Wall -pedantic -I./ -std=gnu99

@@ -1,4 +1,4 @@
-# Note: 99+ required for-loop initial declaration (CentOS 6)
+# Note: 99+ required for for-loop initial declaration (CentOS 6)
 
 CFLAGS   += -Wall -pedantic -I./ -std=c99
 CXXFLAGS += -Wall -pedantic -I./
