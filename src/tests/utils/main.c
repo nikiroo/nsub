@@ -32,6 +32,10 @@ SRunner *get_tests(int more) {
 	if (more)
 		add_test(test_array_more("array -- more (longer)"));
 
+	add_test(test_base64("base64"));
+	if (more)
+		add_test(test_base64_more("base64 -- more (longer)"));
+
 	return runner;
 }
 

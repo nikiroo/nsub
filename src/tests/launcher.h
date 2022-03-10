@@ -16,19 +16,19 @@ END_TEST\
 ck_abort_msg(__VA_ARGS__)\
 
 #define ASSERT_EQUALS_STR(title, expected, received) \
-	if (strcmp(expected, received)) { \
+	do { if (strcmp(expected, received)) { \
 ck_abort_msg("%s\n\tExpected: <%s>\n\tReceived: <%s>", title, expected, received); \
-}
+}} while(0)
 
 #define ASSERT_EQUALS_INT(title, expected, received) \
-	if (expected != received) { \
+	do { if (expected != received) { \
 ck_abort_msg("%s\n\tExpected: %lld\n\tReceived: %lld", title, (long long)expected, (long long)received); \
-}
+}} while(0)
 
 #define ASSERT_EQUALS_SIZE(title, expected, received) \
-	if (expected != received) { \
+	do { if (expected != received) { \
 ck_abort_msg("%s\n\tExpected: %zu\n\tReceived: %zu", title, expected, received); \
-}
+}} while(0)
 
 extern int launcher_color;
 

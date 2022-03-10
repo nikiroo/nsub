@@ -53,9 +53,8 @@ int nsub_read_lrc(song_t *song, char *line) {
 		int start = lrc_millisec(line);
 		char *name = NULL;
 
-		size_t count = array_count(song->lyrics);
-		if (count) {
-			lyric_t *lyric = (lyric_t*) array_get_ptr(song->lyrics, count - 1);
+		array_loop(song->lyrics, lyric, lyric_t)
+		{
 			if (lyric->type == NSUB_LYRIC)
 				lyric->stop = start;
 			if (lyric->type == NSUB_COMMENT)
@@ -73,7 +72,8 @@ int nsub_read_lrc(song_t *song, char *line) {
 		if (line[text_offset]) {
 			if (name) {
 				song->current_num--;
-				array_set_size(song->lyrics, count - 1);
+				// TODO: memory leak?
+				array_cut_at(song->lyrics, array_count(song->lyrics) - 1);
 			}
 			song_add_lyric(song, start, start + 5000, name, line + text_offset);
 		} else {
@@ -88,7 +88,7 @@ int nsub_read_lrc(song_t *song, char *line) {
 		line[end] = '\0';
 		if (!strcmp("language", line + 1)) {
 			song->lang = strdup(line + text_offset);
-		}else if (!strcmp("created_by", line + 1)) {
+		} else if (!strcmp("created_by", line + 1)) {
 			// skip (we KNOW what program we are)
 		} else {
 			song_add_meta(song, line + 1, line + text_offset);

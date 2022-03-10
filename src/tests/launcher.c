@@ -146,8 +146,6 @@ int main(int argc, char **argv) {
 			test_failure();
 			cont = 0;
 		} else if (!strcmp("--more", argv[i])) {
-			if ((i + 1) >= argc)
-				return 1;
 			more = 1;
 		} else if (!strcmp("--color", argv[i])) {
 			launcher_color = 1;

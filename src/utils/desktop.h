@@ -17,9 +17,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/* @file desktop.h
+/**
+ * @file desktop.h
  * @author Niki
- * @date 2021
+ * @date 2021 - 2022
  *
  * @brief Manipulate <tt>.desktop</tt> files (as described by
  * <a href='https://freedesktop.org/'>FreeDesktop.org</a>)
@@ -99,7 +100,7 @@ void desktop_set_id(desktop *self, int id);
  * TODO: switch to full objects
  * @return an array of pointers to desktop objects
  */
-array *desktop_get_children(desktop *app);
+array_t *desktop_get_children(desktop *app);
 
 /**
  * Find a submenu item by the given ID ({@see desktop_set_id(desktop *, int)}).
@@ -110,7 +111,7 @@ array *desktop_get_children(desktop *app);
  *
  * @return the given submenu if found, or NULL
  */
-desktop *desktop_find_id(array *children, int menu_id);
+desktop *desktop_find_id(array_t *children, int menu_id);
 
 /**
  * Look for the icon file related to this basename.

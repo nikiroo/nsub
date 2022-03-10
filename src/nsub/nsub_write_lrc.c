@@ -38,7 +38,7 @@ int nsub_write_lrc(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset) {
 		size_t count = array_count(song->metas);
 		meta_t *meta;
 		for (size_t i = 0; i < count; i++) {
-			meta = (meta_t *) array_get_ptr(song->metas, i);
+			meta = (meta_t *) array_get(song->metas, i);
 			fprintf(out, "[%s: %s]\n", meta->key, meta->value);
 		}
 	}
@@ -69,7 +69,7 @@ int nsub_write_lrc(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset) {
 		size_t count = array_count(song->lyrics);
 		lyric_t *lyric;
 		for (size_t i = 0; i < count; i++) {
-			lyric = (lyric_t*) array_get_ptr(song->lyrics, i);
+			lyric = (lyric_t*) array_get(song->lyrics, i);
 			nsub_write_lrc_lyric(out, lyric, offset);
 		}
 	}

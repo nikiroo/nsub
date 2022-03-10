@@ -53,11 +53,11 @@ typedef struct {
 } priv_t;
 
 /** Swap the data */
-static void cstring_swap(cstring *a, cstring *b);
+static void cstring_swap(cstring_t *a, cstring_t *b);
 /** Change the case to upper -or- lower case (UTF8-compatible) */
-static void cstring_change_case(cstring *self, int up);
+static void cstring_change_case(cstring_t *self, int up);
 /** For path-related functions */
-static void normalize_path(cstring *self);
+static void normalize_path(cstring_t *self);
 
 // Private variables
 
@@ -65,10 +65,10 @@ static char *locale = NULL;
 
 // end of privates
 
-cstring *new_cstring() {
-	cstring *string;
+cstring_t *new_cstring() {
+	cstring_t *string;
 
-	string = malloc(sizeof(cstring));
+	string = malloc(sizeof(cstring_t));
 	strcpy(string->CNAME, "[CString]");
 	string->priv = malloc(sizeof(priv_t));
 	string->length = 0;
@@ -79,7 +79,7 @@ cstring *new_cstring() {
 	return string;
 }
 
-void free_cstring(cstring *string) {
+void free_cstring(cstring_t *string) {
 	if (!string)
 		return;
 
@@ -89,7 +89,7 @@ void free_cstring(cstring *string) {
 	free(string);
 }
 
-void cstring_swap(cstring *a, cstring *b) {
+void cstring_swap(cstring_t *a, cstring_t *b) {
 	void *tmp_p;
 	char *tmp_s;
 	size_t tmp_l;
@@ -107,14 +107,18 @@ void cstring_swap(cstring *a, cstring *b) {
 	b->priv = tmp_p;
 }
 
-int cstring_grow(cstring *self, int min_extra) {
+int cstring_grow(cstring_t *self, int min_extra) {
 	priv_t *priv = ((priv_t *) self->priv);
 
 	size_t sz = priv->buffer_length;
 	size_t req = self->length + min_extra;
 
 	if (req > sz) {
-		sz += BUFFER_SIZE;
+		if (sz > BUFFER_SIZE)
+			sz *= 2;
+		else
+			sz += BUFFER_SIZE;
+
 		if (req > sz)
 			sz = req;
 
@@ -124,7 +128,7 @@ int cstring_grow(cstring *self, int min_extra) {
 	return 1;
 }
 
-int cstring_grow_to(cstring *self, int min_buffer) {
+int cstring_grow_to(cstring_t *self, int min_buffer) {
 	priv_t *priv = ((priv_t *) self->priv);
 
 	if (min_buffer > priv->buffer_length) {
@@ -140,7 +144,7 @@ int cstring_grow_to(cstring *self, int min_buffer) {
 	return 1;
 }
 
-void cstring_compact(cstring *self) {
+void cstring_compact(cstring_t *self) {
 	if (self != NULL) {
 		priv_t *priv = ((priv_t *) self->priv);
 
@@ -149,7 +153,7 @@ void cstring_compact(cstring *self) {
 	}
 }
 
-int cstring_add_car(cstring *self, char source) {
+int cstring_add_car(cstring_t *self, char source) {
 	if (!cstring_grow(self, 1))
 		return 0;
 
@@ -160,19 +164,19 @@ int cstring_add_car(cstring *self, char source) {
 	return 1;
 }
 
-int cstring_add(cstring *self, const char source[]) {
+int cstring_add(cstring_t *self, const char source[]) {
 	return cstring_addf(self, source, 0);
 }
 
-int cstring_addf(cstring *self, const char source[], size_t idx) {
+int cstring_addf(cstring_t *self, const char source[], size_t idx) {
 	return cstring_addfn(self, source, idx, 0);
 }
 
-int cstring_addn(cstring *self, const char source[], size_t n) {
+int cstring_addn(cstring_t *self, const char source[], size_t n) {
 	return cstring_addfn(self, source, 0, n);
 }
 
-int cstring_addfn(cstring *self, const char source[], size_t idx, size_t n) {
+int cstring_addfn(cstring_t *self, const char source[], size_t idx, size_t n) {
 	size_t ss;
 
 	ss = strlen(source);
@@ -196,7 +200,7 @@ int cstring_addfn(cstring *self, const char source[], size_t idx, size_t n) {
 	return 1;
 }
 
-int cstring_addp(cstring *self, const char *fmt, ...) {
+int cstring_addp(cstring_t *self, const char *fmt, ...) {
 	va_list ap;
 	char empty = '\0';
 
@@ -218,16 +222,16 @@ int cstring_addp(cstring *self, const char *fmt, ...) {
 	return ok;
 }
 
-void cstring_cut_at(cstring *self, size_t size) {
+void cstring_cut_at(cstring_t *self, size_t size) {
 	if (self->length > size) {
 		self->string[size] = '\0';
 		self->length = size;
 	}
 }
 
-cstring *cstring_substring(const char self[], size_t start, size_t length) {
+cstring_t *cstring_substring(const char self[], size_t start, size_t length) {
 	size_t sz = strlen(self);
-	cstring * sub = new_cstring();
+	cstring_t * sub = new_cstring();
 
 	if (start <= sz) {
 		const char *source = (self + start);
@@ -339,8 +343,8 @@ void cstring_reverse(char *self) {
 	}
 }
 
-int cstring_replace(cstring *self, const char from[], const char to[]) {
-	cstring *buffer;
+int cstring_replace(cstring_t *self, const char from[], const char to[]) {
+	cstring_t *buffer;
 	size_t i;
 	size_t step;
 	int occur;
@@ -440,12 +444,12 @@ long cstring_rfind(char self[], const char find[], long rstart_index) {
 	return -1;
 }
 
-void cstring_clear(cstring *self) {
+void cstring_clear(cstring_t *self) {
 	self->length = 0;
 	self->string[0] = '\0';
 }
 
-char *cstring_convert(cstring *self) {
+char *cstring_convert(cstring_t *self) {
 	char *string;
 
 	if (!self)
@@ -462,17 +466,17 @@ char *cstring_convert(cstring *self) {
 	return string;
 }
 
-cstring *cstring_clone(const char self[]) {
+cstring_t *cstring_clone(const char self[]) {
 	if (self == NULL)
 		return NULL;
 
-	cstring *clone = new_cstring();
+	cstring_t *clone = new_cstring();
 	cstring_add(clone, self);
 
 	return clone;
 }
 
-void cstring_rtrim(cstring *self, char car) {
+void cstring_rtrim(cstring_t *self, char car) {
 	for (size_t i = self->length - 1; i >= 0; i--) {
 		if (self->string[i] != car)
 			break;
@@ -481,7 +485,7 @@ void cstring_rtrim(cstring *self, char car) {
 	}
 }
 
-void cstring_trim(cstring *self, char car) {
+void cstring_trim(cstring_t *self, char car) {
 	if (car == '\0')
 		return;
 
@@ -492,7 +496,7 @@ void cstring_trim(cstring *self, char car) {
 		i++;
 
 	if (i) {
-		cstring *tmp = new_cstring();
+		cstring_t *tmp = new_cstring();
 		cstring_add(tmp, self->string + i);
 
 		cstring_swap(self, tmp);
@@ -512,15 +516,15 @@ size_t cstring_remove_crlf(char *self) {
 	return sz;
 }
 
-void cstring_toupper(cstring *self) {
+void cstring_toupper(cstring_t *self) {
 	cstring_change_case(self, 1);
 }
 
-void cstring_tolower(cstring *self) {
+void cstring_tolower(cstring_t *self) {
 	cstring_change_case(self, 0);
 }
 
-void cstring_change_case(cstring *self, int up) {
+void cstring_change_case(cstring_t *self, int up) {
 	// Change LC_ALL to LANG if not found
 	// TODO: only take part we need (also, this is still bad practise)
 	if (!locale) {
@@ -535,7 +539,7 @@ void cstring_change_case(cstring *self, int up) {
 		}
 	}
 
-	cstring *rep;
+	cstring_t *rep;
 	mbstate_t state_from, state_to;
 	wchar_t wide;
 	char tmp[10];
@@ -592,7 +596,7 @@ void cstring_change_case(cstring *self, int up) {
 	free_cstring(rep);
 }
 
-int cstring_readline(cstring *self, FILE *file) {
+int cstring_readline(cstring_t *self, FILE *file) {
 	char buffer[BUFFER_SIZE];
 	size_t size = 0;
 	int full_line;
@@ -635,13 +639,13 @@ int cstring_readline(cstring *self, FILE *file) {
 	return 0;
 }
 
-static void normalize_path(cstring *self) {
+static void normalize_path(cstring_t *self) {
 	while (self->length && self->string[self->length - 1] == CSTRING_SEP)
 		self->length--;
 	self->string[self->length] = '\0';
 }
 
-void cstring_add_path(cstring *self, const char subpath[]) {
+void cstring_add_path(cstring_t *self, const char subpath[]) {
 	while (self->length && self->string[self->length - 1] == CSTRING_SEP)
 		self->length--;
 	cstring_add_car(self, CSTRING_SEP);
@@ -652,7 +656,7 @@ void cstring_add_path(cstring *self, const char subpath[]) {
 	normalize_path(self);
 }
 
-int cstring_pop_path(cstring *self, int how_many) {
+int cstring_pop_path(cstring_t *self, int how_many) {
 	int count = 0;
 	size_t tmp;
 	char first = '\0';
@@ -687,7 +691,7 @@ char *cstring_basename(const char path[], const char ext[]) {
 	while (i && path[i] != CSTRING_SEP)
 		i--;
 
-	cstring *rep;
+	cstring_t *rep;
 	if (path[i] != CSTRING_SEP) {
 		rep = cstring_clone(path);
 	} else {
@@ -703,12 +707,12 @@ char *cstring_basename(const char path[], const char ext[]) {
 }
 
 char *cstring_dirname(const char path[]) {
-	cstring *rep = cstring_clone(path);
+	cstring_t *rep = cstring_clone(path);
 	cstring_pop_path(rep, 1);
 	return cstring_convert(rep);
 }
 
-int cstring_is_utf8(cstring *self) {
+int cstring_is_utf8(cstring_t *self) {
 	size_t rep = mbstowcs(NULL, self->string, 0);
 	// -2 = invalid, -1 = not whole
 	return (rep != (size_t) -2) && (rep != (size_t) -1);

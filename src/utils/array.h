@@ -20,7 +20,7 @@
 /** 
  * @file array.h
  * @author Niki
- * @date 2020
+ * @date 2020 - 2022
  *
  * @brief A simple auto-growing array-list
  * 
@@ -43,16 +43,27 @@
  *	const char *l2 = "3. En réserve";
  *	const char *l3 = "1. Première ligne";
  *
- *	array_add(lines, &l1);
- *	array_add(lines, &l2);
- *	array_add(lines, &l3);
+ *  // push mode (usually used for int, char, long...)
+ *	array_push(lines, &l1);
+ *	array_push(lines, &l2);
  *
- *	array_qsorts(lines);
+ *  // new mode (usually used for structures)
+ *	char **tmp = array_new(lines);
+ *	*tmp = l3;
  *
- *	char *last_line;
- *	array_get(lines, &last_line, array_count(lines) - 1);
- *	printf("Last line is now: %s\n", last_line);
+ *  // sort as Strings (also possible with int, long and custom functions)
+ *	array_qsorts(lines, 0);
+ *
+ *	char **last_line = array_get(lines, array_count(lines) - 1);
+ *	printf("Last line is now: %s\n", *last_line);
  *	// -> last_line is now: 3. En réserve
+ *
+ *	array_loop(lines, line, char) {
+ *	    printf("Line: %s\n", line);
+ *	}
+ *	// -> Line: 1. Première ligne
+ *	// -> Line: 2. En réserve
+ *	// -> Line: 3. À l'arrière
  *
  *	free_array(lines);
  * ```
@@ -68,8 +79,53 @@ extern "C" {
 #include <stdlib.h>
 #include <stdio.h>
 
-/** The structure type to use for arrays. */
-typedef struct array_p array;
+/**
+ * Declare a new <tt>TYPE *</tt> pointer and loop through the array with it.
+ *
+ * How to use:
+ * ```C
+ * array_loop(me, line, char) {
+ *     printf("Item: %s\n", line);
+ * }
+ * ```
+ */
+#define array_loop(me, ptr, TYPE) \
+	for (TYPE *ptr = array_first(me); ptr; ptr = array_next(me, ptr))
+
+/**
+ * Similar to <tt>array_loop</tt>, but add a counter <tt>i</tt> starting at 0.
+ *
+ * @see array_loop
+ *
+ * How to use:
+ * ```C
+ * array_loop_i(me, line, char, i) {
+ *     printf("Item n°%d: %s\n", i, line);
+ * }
+ * ```
+ *
+ * @note this macro does expand as 2 separate lines, surround with { } if needed
+ */
+#define array_loop_i(me, ptr, TYPE, i) \
+	size_t i = 0; \
+	for (TYPE *ptr = array_first(me); ptr; ptr = array_next(me, ptr), i++)
+
+/**
+ * @brief A simple auto-growing array-list
+ *
+ * The structure contains a private field (which you should not use) and the
+ * current count of how many items were added. You should probably not modify
+ * the count either (setting it higher is a bad idea and while it should be
+ * possible to set it lower, you are strongly advised to use
+ * <tt>array_cut_at</tt> instead).
+ *
+ * @see array_cut_at
+ */
+typedef struct {
+	char CNAME[10];
+	size_t count;
+	void *priv;
+} array_t;
 
 /**
  * Create a new array.
@@ -79,28 +135,29 @@ typedef struct array_p array;
  *
  * @return a new array (you must later call `free_array()` or `array_convert()`)
  */
-array *new_array(size_t elem_size, size_t initial);
+array_t *new_array(size_t elem_size, size_t initial);
 
 /** 
  * Free the resources held for the given array: you must not use it any more.
  * Note that if you use pointers and not direct data, you may want to free
- * those yourself first, or use `array_free_all()` if applicable.
+ * those yourself first.
+ *
  * @see array_clear
- * @see array_free_all
+ * @see array_loop
  */
-void free_array(array *me);
+void free_array(array_t *me);
 
 /**
  * Clear the array, that is, resets its current size to 0 (buffer unchanged).
  */
-void array_clear(array *me);
+void array_clear(array_t *me);
 
 /** 
  * Convert the array to a block of memory where all values are adjacent.
  *
  * @return the data (you must later call `free()` on it)
  */
-void *array_convert(array *me);
+void *array_convert(array_t *me);
 
 /**
  * Return a pointer to the internal storage used by this array.
@@ -111,40 +168,90 @@ void *array_convert(array *me);
  *
  * @return the internal storage area
  */
-void *array_data(array *me);
+void *array_data(array_t *me);
 
 /** 
  * Return the current number of elements in the array.
  *
  * @return the number of elements in the array
  */
-size_t array_count(array *me);
+size_t array_count(array_t *me);
+
+/**
+ * Create a new element in the array and return a pointer to it.
+ *
+ * @return a pointer to the (newly allocated) last element of the array
+ */
+void *array_new(array_t *me);
+
+/**
+ * Create <tt>n</tt> elements in the array and return a pointer to the
+ * first one ({see array_next(void *)} to get the next ones).
+ *
+ * @param n how many elements to add
+ *
+ * @return a pointer to the (newly allocated) first new element of the array
+ */
+void *array_newn(array_t *me, size_t n);
+
+/**
+ * Return a pointer to the first element of the array (for instance, if you
+ * store integers, it will be <tt>(int *)</tt>; if you store strings, it will
+ * be <tt>char **</tt>).
+ *
+ * @return a <i>pointer</i> to the first element
+ */
+void *array_first(array_t *me);
+
+/**
+ * Return the pointer to the next element, or NULL if it was the last.
+ *
+ * @param ptr a pointer from an array (the array must be valid)
+ *
+ * @return the next element, or NULL
+ */
+void *array_next(array_t *me, void *ptr);
+
+/**
+ * Retrieve the the pointer of an item.
+ * The address of the item will be returned.
+ *
+ * @param i the index of the element to retrieve
+ *
+ * @return the pointer to the i'th element
+ */
+void *array_get(array_t *me, size_t i);
+
+/**
+ * Return a pointer to the last element of this array and remove it from the
+ * array, if the array is not empty.
+ *
+ * @note be careful, the memory pointed to by the element will be reused the
+ * 		next time we add an element -- you should not use it after this; in
+ * 		short, the return value is mainly so you can call <tt>free</tt> on
+ * 		value pointed to by this pointer (<b>not</b> the pointer itself) if it
+ * 		is a pointer to memory you own, or use it locally before continuing to
+ * 		use the array
+ * @note in case this was not clear, do <b>not</b> call <tt>free</tt> on the
+ * 		returned value
+ *
+ * @return a pointer to the last (now removed) item, or NULL if no element
+ */
+void *array_pop(array_t *me);
+
+/**
+ * Cut the array at the given size and return a pointer to the first element
+ * that was removed if any.
+ *
+ * @return a pointer to the first removed element, or NULL
+ */
+void *array_cut_at(array_t *me, size_t n);
 
 /** 
  * Compact the array (resize the buffer so it is equals to the current number 
  * of items in the array or size 1 if there are no items in the array).
  */
-void array_compact(array *me);
-
-/**
- * Walk through the array and call `func` on all the valid elements.
- * 
- * @param func: a function that will be called on each element
- * @param (parameters)
- * 	* `data`: the element in question
- */
-void array_all(array *me, void(*func)());
-
-/**
- * Walk through the array and call `free` on all the valid elements.
- * This will not take any precautions, so only use it when you know that all 
- * the elements are indeed pointers you need to `free`.
- * Note that the number of elements will be helfully set to 0 when done, but
- * the array itself will **not** be `free`d.
- * @see `free_array()`
- * @see `array_clear()`
- */
-void array_free_all(array *me);
+void array_compact(array_t *me);
 
 /**
  * Sort the array with a call to `qsort()`.
@@ -161,7 +268,7 @@ void array_free_all(array *me);
  * 	*  `0`: if both elements are equals
  * 	*  `1`: if element A is more than element B
  */
-void array_qsort(array *me, int (*compar)(const void *itm1, const void *itm2));
+void array_qsort(array_t *me, int (*compar)(const void *itm1, const void *itm2));
 
 /**
  * Sort the array with `qsort()`, data is `char *`.
@@ -170,7 +277,7 @@ void array_qsort(array *me, int (*compar)(const void *itm1, const void *itm2));
  *
  * @see array_qsort
  */
-void array_qsorts(array *me, int rev);
+void array_qsorts(array_t *me, int rev);
 
 /**
  * Sort the array with `qsort()`, data is `int`.
@@ -179,7 +286,7 @@ void array_qsorts(array *me, int rev);
  *
  * @see array_qsort
  */
-void array_qsorti(array *me, int rev);
+void array_qsorti(array_t *me, int rev);
 
 /** 
  * Sort the array with `qsort()`, data is `long`.
@@ -188,7 +295,7 @@ void array_qsorti(array *me, int rev);
  *
  * @see array_qsort
  */
-void array_qsortl(array *me, int rev);
+void array_qsortl(array_t *me, int rev);
 
 /**
  * Sort the array with `qsort()`, data is `float`.
@@ -197,7 +304,7 @@ void array_qsortl(array *me, int rev);
  *
  * @see array_qsort
  */
-void array_qsortf(array *me, int rev);
+void array_qsortf(array_t *me, int rev);
 
 /**
  * Add an element to the array.
@@ -207,7 +314,7 @@ void array_qsortf(array *me, int rev);
  * @return FALSE if the array is too short and we cannot allocate enough 
  * 	contiguous memory for its needs
  */
-int array_add(array *me, void *data);
+int array_push(array_t *me, void *data);
 
 /**
  * Add multiple elements to the array.
@@ -219,7 +326,7 @@ int array_add(array *me, void *data);
  * @return FALSE if the array is too short and we cannot allocate enough 
  * 	contiguous memory for its needs
  */
-int array_addn(array *me, void *data, size_t n);
+int array_pushn(array_t *me, void *data, size_t n);
 
 /**
  * Set an element of the array to the given value.
@@ -235,7 +342,7 @@ int array_addn(array *me, void *data, size_t n);
  * @return FALSE if the array is too short and we cannot allocate enough 
  * 	contiguous memory for its needs, or if the index is out of bounds
  */
-int array_set(array *me, size_t i, void *data);
+int array_set(array_t *me, size_t i, void *data);
 
 /**
  * Set elements of the array to the given value.
@@ -252,39 +359,31 @@ int array_set(array *me, size_t i, void *data);
  * @return FALSE if the array is too short and we cannot allocate enough 
  * 	contiguous memory for its needs, or if the index is out of bounds
  */
-int array_setn(array *me, size_t i, void *data, size_t n);
-
-// only work if new size < current size
-int array_set_size(array *me, size_t n);
+int array_setn(array_t *me, size_t i, void *data, size_t n);
 
 /**
- * Retrieve the the pointer of an item.
- * The address of the item will be returned.
- *
- * @param i the index of the element to retrieve
- *
- * @return the pointer to the i'th element
- */
-void *array_get_ptr(array *me, size_t i);
-
-/**
- * Retrieve the content of an item -- no bounds checking.
- * The item will be copied to the given address location.
+ * Retrieve the content of an item.
+ * The item will be copied to the given address location if it exists.
  *
  * @param target an address where to write a copy of the item
  * @param i the index of the element to retrieve
+ *
+ * @return TRUE if the item exists (if <tt>i</tt> is an element of the array)
  */
-void array_get(array *me, void *target, size_t i);
+int array_copy(array_t *me, void *target, size_t i);
 
 /**
- * Retrieve the content of multiple items -- no bounds checking.
+ * Retrieve the content of multiple items if they exist.
  * The items will be copied in a sequence to the given address location.
  *
  * @param target an address where to write a copy of the items
  * @param i the index of the first element to retrieve
  * @param n the number of elements to retrieve
+ *
+ * @return TRUE if the item exists (if <tt>i</tt> to <tt>n</tt> are elements
+ * 		of the array)
  */
-void array_getn(array *me, void *target, size_t i, size_t n);
+int array_copyn(array_t *me, void *target, size_t i, size_t n);
 
 /**
  * Read all the lines from a file.
@@ -300,8 +399,8 @@ void array_getn(array *me, void *target, size_t i, size_t n);
  *
  * @return the number of elements in the array
  */
-size_t array_readfile(array *me, FILE *in, void(*doline)(array *me,
-		const char line[]));
+size_t array_readfile(array_t *me, FILE *in,
+		void (*doline)(array_t *me, const char line[]));
 
 /**
  * Read all the lines from a file, converting them to integer values.
@@ -316,47 +415,47 @@ size_t array_readfile(array *me, FILE *in, void(*doline)(array *me,
  *
  * @return the number of elements in the array
  */
-size_t array_readfilei(array *me, FILE *in);
+size_t array_readfilei(array_t *me, FILE *in);
 
 /**
  * Read all the lines from a file, converting them to strings.
  *
  * Note that you will need to free them before freeing the array,
- * for instance with `array_free_all()`.
+ * for instance with the <tt>array_loop</tt> macro.
  *
+ * @see array_loop
  * @see array_readfile
- * @see array_free_all
  *
  * @param in the file to read
  *
  * @return the number of elements in the array
  */
-size_t array_readfiles(array *me, FILE *in);
+size_t array_readfiles(array_t *me, FILE *in);
 
 /**
  * Print the array metadata to `stderr` (mostly for DEBUG).
  */
-void array_print(array *me);
+void array_print(array_t *me);
 
 /**
  * Print the array and strings content to `stderr` (mostly for DEBUG).
  */
-void array_prints(array *me);
+void array_prints(array_t *me);
 
 /**
  * Print the array and integer content to `stderr` (mostly for DEBUG).
  */
-void array_printi(array *me);
+void array_printi(array_t *me);
 
 /**
  * Print the array and long content to `stderr` (mostly for DEBUG).
  */
-void array_printl(array *me);
+void array_printl(array_t *me);
 
 /**
  * Print the array and floats (%d) content to `stderr` (mostly for DEBUG).
  */
-void array_printf(array *me);
+void array_printf(array_t *me);
 
 /** 
  * Print the array and content to `stderr` (mostly for DEBUG).
@@ -367,8 +466,8 @@ void array_printf(array *me);
  * 	* `buffer`: the buffer to use for this (which is the one you pass)
  * @param buffer a buffer that will be passed to `display`
  */
-void array_print_fmt(array *me, 
-	void(*display)(char *buffer, void *item), char *buffer);
+void array_print_fmt(array_t *me, void (*display)(char *buffer, void *item),
+		char *buffer);
 
 #endif /* ARRAY_H */
 

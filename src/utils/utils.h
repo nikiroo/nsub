@@ -20,10 +20,10 @@
 /**
  * @file utils.h
  * @author Niki
- * @date 2020
+ * @date 2020 - 2022
  *
- * @brief Include all the other .h as well as a C99-compatible strdup/strnlen
- * 		functions.
+ * @brief Include all the other .h as well as C99-compatible
+ * <tt>strdup</tt>/<tt>strnlen</tt> functions if they are not already defined
  */
 #ifndef UTILS_H
 #define UTILS_H
@@ -40,10 +40,31 @@ extern "C" {
 
 /* Helps with C99 compatibility for code that is not */
 
-#ifndef strnlen
+#if _POSIX_C_SOURCE < 200809L && _XOPEN_SOURCE < 500
+#ifndef _GNU_SOURCE
+/**
+ * The strnlen() function returns the number of bytes in the string pointed to
+ * by s, excluding the terminating null byte ('\0'), but at most maxlen.
+ * In doing this, strnlen() looks only at the first maxlen characters in the
+ * string pointed to by s and never beyond s[maxlen-1].
+ *
+ * @return The strnlen() function returns strlen(s), if that is less than
+ * 		maxlen, or maxlen if there is no null terminating ('\0') among the first
+ * 		maxlen characters pointed to by s
+ */
 size_t strnlen(const char *s, size_t maxlen);
 #endif
-#ifndef strdup
+#endif
+#if _POSIX_C_SOURCE < 200809L && _XOPEN_SOURCE < 500
+/**
+ * The strndup() function is similar, but copies at most n bytes.
+ * If s is longer than n, only n bytes are copied, and a terminating null byte
+ * ('\0') is added.
+ *
+ * @return On success, the strndup() function returns a pointer to the
+ * 		duplicated string.  It returns NULL if insufficient memory was
+ * 		available, with errno set to indicate the error
+ */
 char *strdup(const char *source);
 #endif
 

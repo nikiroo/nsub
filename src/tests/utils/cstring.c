@@ -24,7 +24,7 @@
 
 #define TEST_FILE_READLINE "utils/test_readline.txt"
 
-cstring *s;
+cstring_t *s;
 
 static void setup() {
 	s = new_cstring();
@@ -435,7 +435,7 @@ START(convert)
 		END
 
 START(clone)
-		cstring *clone;
+		cstring_t *clone;
 
 		clone = cstring_clone(NULL);
 		if (clone)
@@ -775,7 +775,7 @@ START(dirname)
 		END
 
 START(many_adds)
-		size_t count = 50000000;
+		size_t count = 10 * 1000 * 1000;
 		for (size_t i = 0; i < count; i++) {
 			cstring_add(s, "1234567890");
 		}

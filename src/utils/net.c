@@ -105,7 +105,7 @@ int net_connect(const char server[], int port) {
 	int sockfd;
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
-	cstring *str;
+	cstring_t *str;
 
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;
@@ -167,7 +167,7 @@ int net_listen(int port, int backlog) {
 	struct addrinfo hints, *servinfo, *p;
 	char yes = 1;
 	int rv;
-	cstring *str;
+	cstring_t *str;
 
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_UNSPEC;

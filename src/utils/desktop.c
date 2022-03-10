@@ -34,7 +34,7 @@ struct {
 	char *icon;
 	char *icon_file;
 	char *exec;
-	array *children;
+	array_t *children;
 	int id;
 }typedef desktop_p;
 
@@ -104,7 +104,7 @@ desktop *new_desktop(const char filename[], int best_size) {
 			desktop_p *child = (desktop_p*) new_desktop(childname, best_size);
 			free(childname);
 			if (child) {
-				array_add(me->children, &child);
+				array_push(me->children, &child);
 			}
 		}
 
@@ -123,21 +123,17 @@ desktop *new_desktop(const char filename[], int best_size) {
 	}
 
 	FILE *file;
-	array *tab;
-	size_t n_lines;
+	array_t *tab;
 
 	tab = new_array(sizeof(char *), 32);
 
 	file = fopen(filename, "r");
-	n_lines = array_readfiles(tab, file);
+	array_readfiles(tab, file);
 	fclose(file);
 
-	char *line;
 	char *startsWith;
 	size_t n;
-	for (size_t i = 0; i < n_lines; i++) {
-		array_get(tab, &line, i);
-
+	array_loop_i(tab, line, char, i) {
 		startsWith = "Name=";
 		n = strlen(startsWith);
 		if (!strncmp(line, startsWith, n)) {
@@ -169,7 +165,8 @@ desktop *new_desktop(const char filename[], int best_size) {
 		}
 	}
 
-	array_free_all(tab);
+	array_loop(tab, item, void)
+		free(item);
 
 	// Find icon file linked to icon
 	if (me->icon && !me->icon_file) {
@@ -229,27 +226,24 @@ void desktop_set_id(desktop *app, int id) {
 	me->id = id;
 }
 
-array *desktop_get_children(desktop *app) {
+array_t *desktop_get_children(desktop *app) {
 	desktop_p *me = (desktop_p*) app;
 	return me->children;
 }
 
-desktop *desktop_find_id(array *children, int id) {
+desktop *desktop_find_id(array_t *children, int id) {
 	desktop *found = NULL;
-	size_t n = 0;
 
-	if (children)
-		n = array_count(children);
-
-	desktop_p *child;
-	for (size_t i = 0; !found && i < n; i++) {
-		array_get(children, &child, i);
+	array_loop(children, child, desktop_p)
+	{
 		if (child->id == id) {
 			found = (desktop*) child;
 			break;
 		}
 
 		found = desktop_find_id(child->children, id);
+		if (found)
+			break;
 	}
 
 	return found;
@@ -334,23 +328,21 @@ char *desktop_find_icon(const char basename[], int icon_size) {
 	sprintf(icon_size_str, "%dx%d", icon_size, icon_size);
 
 	if (!theme) {
-		array *tab = new_array(sizeof(char *), 32);
-		size_t n_lines = 0;
+		array_t *tab = new_array(sizeof(char *), 32);
 
 		tmp = desktop_concat(home, "/.gtkrc-2.0", NULL);
 		FILE *file = fopen(tmp, "r");
 		free(tmp);
 		if (file) {
-			n_lines = array_readfiles(tab, file);
+			array_readfiles(tab, file);
 			fclose(file);
 		}
 
-		char *line;
 		const char *startsWith = "gtk-icon-theme-name=";
 		size_t n = strlen(startsWith);
 
-		for (size_t i = 0; i < n_lines; i++) {
-			array_get(tab, &line, i);
+		array_loop(tab, line, char)
+		{
 			if (!strncmp(line, startsWith, n)) {
 				free(theme);
 				if (line[n] == '"') {
@@ -372,7 +364,8 @@ char *desktop_find_icon(const char basename[], int icon_size) {
 			free(tmp);
 		}
 
-		array_free_all(tab);
+		array_loop(tab,item, void)
+			free(item);
 	}
 
 	// Allow NULL

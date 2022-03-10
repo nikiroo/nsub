@@ -3,9 +3,7 @@
  * @author Samantaz Fox
  * @date 2019
  *
- * @brief print.h
- *
- * print.h
+ * @brief File name and line numbers
  *
  * Small utility header designed to print file name and line number
  * along with debug/info messages.
@@ -14,7 +12,7 @@
  *   ERROR("program exited with code %d\n", getErrorCode() );
  *
  * Known issues:
- *   - Must take at least one argument in addtion to format string
+ *   - Must take at least one argument in addition to format string
  *
  *
  * Copyright 2019 (C) Samantaz Fox
@@ -22,7 +20,6 @@
  *
  * This file is in the public domain.
  * Feel free to copy, modify or redistribute it!
- *
 */
 
 #ifndef __PRINT_H__

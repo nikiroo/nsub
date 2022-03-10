@@ -47,7 +47,7 @@ int nsub_write_srt(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset) {
 		size_t count = array_count(song->lyrics);
 		lyric_t *lyric;
 		for (size_t i = 0; i < count; i++) {
-			lyric = (lyric_t*) array_get_ptr(song->lyrics, i);
+			lyric = (lyric_t*) array_get(song->lyrics, i);
 			nsub_write_srt_lyric(out, lyric, offset);
 		}
 	}

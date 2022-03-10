@@ -17,6 +17,18 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+/**
+ * @file cstring.h
+ * @author Niki
+ * @date 2013 - 2022
+ *
+ * @brief Some string utility functions
+ *
+ * This file implements some basic functions of a string, most often by working
+ * directly with <tt>char *</tt> (but when needed with the provided
+ * <tt>cstring</tt> object).
+ */
+
 #ifndef CSTRING_H
 #define CSTRING_H
 
@@ -27,20 +39,23 @@ extern "C" {
 #include <stdio.h>
 
 /**
- * This is a cstring. It contains a suite of characters terminated by a NUL byte
+ * @brief A NUL-byte terminated string, with a known length
+ *
+ * The structure contains a suite of characters terminated by a NUL byte
  * (or just a NUL byte), and a length.
  * It is advised NOT to modify either of those directly.
- * You can use cstring_convert to get a char*, though (in this case, the cstring
- * MUST NOT be used again, and you are responsible for freeing the said char*).
+ * You can use <tt>cstring_convert</tt> to get a <tt>char *</tt>, though
+ * (in this case, the cstring <b>MUST NOT</b> be used again, and you are
+ * responsible for freeing said <tt>char *</tt>).
+ *
+ * @see cstring_convert
  */
-typedef struct cstring_struct cstring;
-
-struct cstring_struct {
-	char CNAME[32];
+typedef struct {
+	char CNAME[10];
 	char *string;
 	size_t length;
 	void *priv;
-};
+} cstring_t;
 
 /**
  * Instantiate a new cstring.
@@ -48,7 +63,7 @@ struct cstring_struct {
  * Create (and allocate the memory for) a new cstring.
  * Do not forget to call cstring_free(cstring) when done.
  */
-cstring *new_cstring();
+cstring_t *new_cstring();
 
 /**
  * Free the given cstring.
@@ -57,7 +72,7 @@ cstring *new_cstring();
  *
  * @param self the cstring to free, which MUST NOT be used again afterward
  */
-void free_cstring(cstring *self);
+void free_cstring(cstring_t *self);
 
 /**
  * Grow the cstring to accommodate that many characters in addition to those
@@ -69,7 +84,7 @@ void free_cstring(cstring *self);
  * @return TRUE if success (FALSE means it was unable to grow due to memory
  * 		pressure)
  */
-int cstring_grow(cstring *self, int min_extra);
+int cstring_grow(cstring_t *self, int min_extra);
 
 /**
  * Grow the cstring to accommodate that many characters in total, if needed.
@@ -80,14 +95,14 @@ int cstring_grow(cstring *self, int min_extra);
  * @return TRUE if success (FALSE means it was unable to grow due to memory
  * 		pressure)
  */
-int cstring_grow_to(cstring *self, int min_buffer);
+int cstring_grow_to(cstring_t *self, int min_buffer);
 
 /**
  * Compact the memory used by this string.
  *
  * @param self the string to work on
  */
-void cstring_compact(cstring *self);
+void cstring_compact(cstring_t *self);
 
 /**
  * Add a char at the end of the given cstring.
@@ -98,7 +113,7 @@ void cstring_compact(cstring *self);
  * @return TRUE if success (FALSE means it was unable to grow due to memory
  * 		pressure)
  */
-int cstring_add_car(cstring *self, char source);
+int cstring_add_car(cstring_t *self, char source);
 
 /**
  * Add a string (a sequence of char that MUST end with '\0') at the end of the
@@ -110,7 +125,7 @@ int cstring_add_car(cstring *self, char source);
  * @return TRUE if success (FALSE means it was unable to grow due to memory
  * 		pressure)
  */
-int cstring_add(cstring *self, const char source[]);
+int cstring_add(cstring_t *self, const char source[]);
 
 /**
  * Add a string (a sequence of char that MUST end with '\0') at the end of the
@@ -123,7 +138,7 @@ int cstring_add(cstring *self, const char source[]);
  * @return TRUE if success (FALSE means it was unable to grow due to memory
  * 		pressure)
  */
-int cstring_addf(cstring *self, const char source[], size_t idx);
+int cstring_addf(cstring_t *self, const char source[], size_t idx);
 
 /**
  * Add a string (a sequence of char that MAY end with '\0') at the end of the
@@ -137,7 +152,7 @@ int cstring_addf(cstring *self, const char source[], size_t idx);
  * @return TRUE if success (FALSE means it was unable to grow due to memory
  * 		pressure)
  */
-int cstring_addn(cstring *self, const char source[], size_t n);
+int cstring_addn(cstring_t *self, const char source[], size_t n);
 
 /**
  * Add a string (a sequence of char that MAY end with '\0') at the end of the
@@ -152,7 +167,7 @@ int cstring_addn(cstring *self, const char source[], size_t n);
  * @return TRUE if success (FALSE means it was unable to grow due to memory
  * 		pressure)
  */
-int cstring_addfn(cstring *self, const char source[], size_t idx, size_t n);
+int cstring_addfn(cstring_t *self, const char source[], size_t idx, size_t n);
 
 /**
  * Add a string via the usual <tt>printf</tt> formatters.
@@ -164,7 +179,7 @@ int cstring_addfn(cstring *self, const char source[], size_t idx, size_t n);
  * @return TRUE if success (FALSE means it was unable to grow due to memory
  * 		pressure)
  */
-int cstring_addp(cstring *self, const char *fmt, ...);
+int cstring_addp(cstring_t *self, const char *fmt, ...);
 
 /**
  * Cut the string at the given size if it is greater.
@@ -176,7 +191,7 @@ int cstring_addp(cstring *self, const char *fmt, ...);
  * @param size the size to cut at (the maximum size of the cstring after this
  * 		operation, NUL excepted)
  */
-void cstring_cut_at(cstring *self, size_t size);
+void cstring_cut_at(cstring_t *self, size_t size);
 
 /**
  * Create a substring of this one.
@@ -187,7 +202,7 @@ void cstring_cut_at(cstring *self, size_t size);
  *
  * @return a newly allocated cstring
  */
-cstring *cstring_substring(const char self[], size_t start, size_t length);
+cstring_t *cstring_substring(const char self[], size_t start, size_t length);
 
 /**
  * Split a cstring into "smaller" cstrings every time the given separator is found.
@@ -238,7 +253,7 @@ void cstring_reverse(char *self);
  *
  * @return the number of occurrences changed
  */
-int cstring_replace(cstring *self, const char from[], const char to[]);
+int cstring_replace(cstring_t *self, const char from[], const char to[]);
 
 /**
  * Replace all occurrences of a char inside the given string by another.
@@ -306,7 +321,7 @@ long cstring_rfind(char self[], const char find[], long rstart_index);
  *
  * @param self the string to work on
  */
-void cstring_clear(cstring *self);
+void cstring_clear(cstring_t *self);
 
 /**
  * Convert this cstring into a string
@@ -315,7 +330,7 @@ void cstring_clear(cstring *self);
  *
  * @param self the cstring to work on
  */
-char *cstring_convert(cstring *self);
+char *cstring_convert(cstring_t *self);
 
 /**
  * Clone this string.
@@ -323,7 +338,7 @@ char *cstring_convert(cstring *self);
  *
  * @param self the string to clone
  */
-cstring *cstring_clone(const char self[]);
+cstring_t *cstring_clone(const char self[]);
 
 /**
  * Trim this cstring of all trailing 'car' instances.
@@ -333,7 +348,7 @@ cstring *cstring_clone(const char self[]);
  *
  * @return a right trimmed cstring
  */
-void cstring_rtrim(cstring *self, char car);
+void cstring_rtrim(cstring_t *self, char car);
 
 /**
  * Trim this cstring of all 'car' instances from the start and/or the
@@ -344,7 +359,7 @@ void cstring_rtrim(cstring *self, char car);
  * 
  * @return a trimmed cstring
  */
-void cstring_trim(cstring *self, char car);
+void cstring_trim(cstring_t *self, char car);
 
 /**
  * Remove the \r and \n sequence (or one OR the other) at the end of the string.
@@ -364,7 +379,7 @@ size_t cstring_remove_crlf(char *self);
  *
  * @param self the cstring to work on
  */
-void cstring_toupper(cstring *self);
+void cstring_toupper(cstring_t *self);
 
 /**
  * Change the case to lower-case (UTF-8 compatible, but the string MUST be
@@ -375,7 +390,7 @@ void cstring_toupper(cstring *self);
  *
  * @param self the cstring to work on
  */
-void cstring_tolower(cstring *self);
+void cstring_tolower(cstring_t *self);
 
 /**
  * Read a whole line (CR, LN or CR+LN terminated) from the given file stream.
@@ -385,7 +400,7 @@ void cstring_tolower(cstring *self);
  *
  * @return 1 if a line was read, 0 if not
  */
-int cstring_readline(cstring *self, FILE *file);
+int cstring_readline(cstring_t *self, FILE *file);
 
 /**
  * Add a path to the given cstring (if it is currently empty, it
@@ -397,7 +412,7 @@ int cstring_readline(cstring *self, FILE *file);
  * @param self the base cstring (empty for a root path)
  * @param subpath the path component to add
  */
-void cstring_add_path(cstring *self, const char subpath[]);
+void cstring_add_path(cstring_t *self, const char subpath[]);
 
 /**
  * Remove the <tt>how_many</tt> components of the path described by this
@@ -409,7 +424,7 @@ void cstring_add_path(cstring *self, const char subpath[]);
  * @param how_many how many path components to remove (for instance, to go from
  * 		<tt>/some/path/to/file</tt> to <tt>/some/path</tt> you would need 2)
  */
-int cstring_pop_path(cstring *self, int how_many);
+int cstring_pop_path(cstring_t *self, int how_many);
 
 /**
  * Return the basename component of this path (for instance,
@@ -440,7 +455,7 @@ char *cstring_dirname(const char path[]);
  * 
  * @return TRUE if it is UTF-8
  */
-int cstring_is_utf8(cstring *self);
+int cstring_is_utf8(cstring_t *self);
 
 #endif
 

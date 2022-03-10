@@ -18,11 +18,14 @@
  */
 
 /**
- * @file
+ * @file net.h
  * @author niki
- * @date November 2011
+ * @date 2011 - 2022
  *
- * Allows you to make connections to/from a server, and to send/receive data.
+ * @brief Send/receive data from the network
+ *
+ * Allows you to make connections to/from a server, and to send/receive data
+ * through those connections.
  */
 
 #ifndef NET_H
@@ -34,54 +37,48 @@ extern "C" {
 
 // WHY ??
 #ifdef _WIN32
-	#ifndef WIN32
-		#define WIN32
-	#endif
+#ifndef WIN32
+#define WIN32
+#endif
 #endif
 
 #ifdef WIN32
-    #ifndef _WIN32_WINNT
-        #define _WIN32_WINNT 0x501
-    #endif
-	#include <winsock2.h>
-	#include <ws2tcpip.h>
-	typedef SSIZE_T ssize_t;
-	#define close(s) closesocket(s)
-	#define ioctl(a,b,c) ioctlsocket(a,b,c)
-	#pragma comment(lib, "wsock32.lib");
-	#pragma comment(lib, "ws2_32.lib");
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x501
+#endif
+#include <winsock2.h>
+#include <ws2tcpip.h>
+typedef SSIZE_T ssize_t;
+#define close(s) closesocket(s)
+#define ioctl(a,b,c) ioctlsocket(a,b,c)
+#pragma comment(lib, "wsock32.lib");
+#pragma comment(lib, "ws2_32.lib");
 #else
-	#include <unistd.h>
-	#include <sys/socket.h>
-	#include <netinet/in.h>
-	#include <netdb.h>
-	#include <arpa/inet.h>
-	#include <sys/wait.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <sys/wait.h>
 #endif
 
 /* for ssize_t */
 #include <sys/types.h>
 
 /**
- * Obsolete, see net_set_blocking(..)
- */
-int net_set_non_blocking(int fd);
-
-/**
  * You must call this function before doing any network related operation,
  * because of some legacy WIN32 rule.
- * (It is a noop on all other platforms).
+ * (It is a noop on all other platforms.)
  *
- * @return 0 when the Windows host does not support WinSock and thus,
+ * @return FALSE when the Windows host does not support WinSock and thus,
  * 		no network for you (you still need to call net_cleanup)
- * 
  */
 int net_init();
 
 /**
  * You must call this function after you are done using network related
  * operations within this DLL, because of some legacy WIN32 rule.
- * (It is a noop on all other platforms).
+ * (It is a noop on all other platforms.)
  */
 void net_cleanup();
 
@@ -90,9 +87,9 @@ void net_cleanup();
  * This function can work with file sockets, too.
  *
  * @param fd the file descriptor or socket to change
- * @param block 1 to block, 0 not to block
+ * @param block TRUE to block, FALSE not to block
  * 
- * @return 1 if success
+ * @return TRUE if success
  */
 int net_set_blocking(int fd, int block);
 
@@ -103,17 +100,17 @@ int net_set_blocking(int fd, int block);
  * @param server the server to connect to
  * @param port the port to connect on
  *
- * @return the server socket or -1 if error
+ * @return the server socket or a negative value on error
  */
 int net_connect(const char server[], int port);
 
 /**
  * Open a port and returns a (server) socket descriptor from which you can
- * 		  accept connection.
+ * accept connections.
  *
  * @param port the port to connect on
  * @param backlog the maximum number of client connections we will queue for
- *  	this socket until you handle them
+ * 		this socket until you handle them
  *
  * @return the server socket, or a negative value on error
  */
@@ -145,8 +142,7 @@ void net_close_socketd(int socketd);
  * @param buf the buffer to read from
  * @param n the number of bytes to write
  *
- * @return the actual number of bytes written or a
- * 		   negative number if error
+ * @return the actual number of bytes written or a negative number if error
  */
 ssize_t net_write(int fd, const void *buf, size_t n);
 
@@ -164,5 +160,5 @@ ssize_t net_read(int fd, void *buf, size_t nbytes);
 #endif
 
 #ifdef __cplusplus
-extern }
+extern}
 #endif

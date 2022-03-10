@@ -17,6 +17,22 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+/**
+ * @file base64.h
+ * @author Niki
+ * @date 2013 - 2022
+ *
+ * @brief Base64 encode and decode
+ *
+ * This file only provides 2 functions, <tt>base64_encode</tt> and
+ * <tt>base64_decode</tt>, which works on NUL-terminated strings and do what
+ * you expect them to.
+ *
+ * @see base64_encode(const char data[])
+ * @see base64_decode(const char data[])
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,12 +42,26 @@ extern "C" {
 
 #include <stdlib.h>
 
-typedef struct {
-	char *table;
-} base64;
-
+/**
+ * Encode the given data to Base64.
+ *
+ * @note can return NULL if there is not enough memory to allocated the answer
+ *
+ * @param data the data to encode
+ *
+ * @return a newly-allocated string for which you are responsible, or NULL
+ */
 char *base64_encode(const char data[]);
 
+/**
+ * Decode the given data to Base64.
+ *
+ * @note can return NULL if there is not enough memory to allocated the answer
+ *
+ * @param data the data to decode
+ *
+ * @return a newly-allocated string for which you are responsible, or NULL
+ */
 char *base64_decode(const char data[]);
 
 #endif
