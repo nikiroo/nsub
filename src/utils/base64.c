@@ -19,13 +19,8 @@
 
 #include "base64.h"
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-
-
-static char *create_dtable();
 
 static char encoding_table[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
 		'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
@@ -33,32 +28,31 @@ static char encoding_table[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
 		'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y',
 		'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/' };
 
-static char *decoding_table = NULL;
+static int decoding_table_flg = 0;
+static char decoding_table[256];
 
-static int b64_mod_table[] = { 0, 2, 1 };
-
-static char *create_dtable() {
-	char *decoding_table = malloc(256 * sizeof(char));
-	for (int i = 0; i < 64; i++)
-		decoding_table[(unsigned char) encoding_table[i]] = i;
-
-	return decoding_table;
+static void init_dtable() {
+	if (!decoding_table_flg) {
+		for (int i = 0; i < 64; i++)
+			decoding_table[(unsigned char) encoding_table[i]] = i;
+		decoding_table_flg = 1;
+	}
 }
 
 char *base64_encode(const char *data) {
 	size_t input_length = strlen(data);
-	size_t output_length = 4 * ((input_length + 2) / 3) + 1;
+	size_t output_length = 4 * ((input_length + 2) / 3);
 
-	char *encoded_data = malloc(output_length);
-	if (encoded_data == NULL)
+	char *encoded_data = malloc(output_length + 1);
+	if (!encoded_data)
 		return NULL;
 
 	for (unsigned int i = 0, j = 0; i < input_length;) {
-		uint32_t octet_a = i < input_length ? (unsigned char) data[i++] : 0;
-		uint32_t octet_b = i < input_length ? (unsigned char) data[i++] : 0;
-		uint32_t octet_c = i < input_length ? (unsigned char) data[i++] : 0;
+		unsigned int octet_a = i < input_length ? (unsigned char) data[i++] : 0;
+		unsigned int octet_b = i < input_length ? (unsigned char) data[i++] : 0;
+		unsigned int octet_c = i < input_length ? (unsigned char) data[i++] : 0;
 
-		uint32_t triple = (octet_a << 0x10) + (octet_b << 0x08) + octet_c;
+		unsigned int triple = (octet_a << 0x10) + (octet_b << 0x08) + octet_c;
 
 		encoded_data[j++] = (char) encoding_table[(triple >> 3 * 6) & 0x3F];
 		encoded_data[j++] = (char) encoding_table[(triple >> 2 * 6) & 0x3F];
@@ -66,39 +60,38 @@ char *base64_encode(const char *data) {
 		encoded_data[j++] = (char) encoding_table[(triple >> 0 * 6) & 0x3F];
 	}
 
-	for (unsigned int i = 0; (int) i < b64_mod_table[input_length % 3]; i++)
-		encoded_data[output_length - 2 - i] = '=';
+	if ((input_length % 3) > 0)
+		encoded_data[output_length - 1] = '=';
+	if ((input_length % 3) == 1)
+		encoded_data[output_length - 2] = '=';
 
-	encoded_data[output_length - 1] = '\0';
+	encoded_data[output_length] = '\0';
 
 	return encoded_data;
 }
 
 char *base64_decode(const char *data) {
-	if (!decoding_table)
-		decoding_table=create_dtable();
+	init_dtable();
 
 	size_t input_length = strlen(data);
-	size_t output_length = 4 * ((input_length + 2) / 3) + 1;
-
 	if (input_length % 4 != 0)
 		return NULL;
 
-	output_length = (input_length / 4 * 3) + 1;
+	size_t output_length = ((input_length / 4) * 3);
+	if (data[input_length - 1] == '=')
+		output_length--;
 	if (data[input_length - 2] == '=')
 		output_length--;
-	if (data[input_length - 3] == '=')
-		output_length--;
 
-	char *decoded_data = malloc(output_length);
-	if (decoded_data == NULL)
+	char *decoded_data = malloc(output_length + 1);
+	if (!decoded_data)
 		return NULL;
 
 	for (unsigned int i = 0, j = 0; i < input_length; i += 4) {
-		uint32_t sextet_a = 0;
-		uint32_t sextet_b = 0;
-		uint32_t sextet_c = 0;
-		uint32_t sextet_d = 0;
+		unsigned int sextet_a = 0;
+		unsigned int sextet_b = 0;
+		unsigned int sextet_c = 0;
+		unsigned int sextet_d = 0;
 
 		if (data[i] != '=') {
 			sextet_a = decoding_table[(unsigned char) data[i + 0]];
@@ -107,18 +100,18 @@ char *base64_decode(const char *data) {
 			sextet_d = decoding_table[(unsigned char) data[i + 3]];
 		}
 
-		uint32_t triple = (sextet_a << 3 * 6) + (sextet_b << 2 * 6)
+		unsigned int triple = (sextet_a << 3 * 6) + (sextet_b << 2 * 6)
 				+ (sextet_c << 1 * 6) + (sextet_d << 0 * 6);
 
-		if (j + 1 < output_length)
+		if (j < output_length)
 			decoded_data[j++] = (char) ((triple >> 2 * 8) & 0xFF);
-		if (j + 1 < output_length)
+		if (j < output_length)
 			decoded_data[j++] = (char) ((triple >> 1 * 8) & 0xFF);
-		if (j + 1 < output_length)
+		if (j < output_length)
 			decoded_data[j++] = (char) ((triple >> 0 * 8) & 0xFF);
 	}
 
-	decoded_data[output_length - 1] = '\0';
+	decoded_data[output_length] = '\0';
 	return decoded_data;
 }
 

@@ -33,18 +33,41 @@ static char decoded[] = "This is Le Test, we will UTF-8 the String, too!";
 static char encoded[] =
 		"VGhpcyBpcyBMZSBUZXN0LCB3ZSB3aWxsIFVURi04IHRoZSBTdHJpbmcsIHRvbyE=";
 
+static char decoded_utf8[] = "Le café d'Abigaëlle";
+static char encoded_utf8[] = "TGUgY2Fmw6kgZCdBYmlnYcOrbGxl";
+
 START(decode)
-		ASSERT_EQUALS_STR("decoding", decoded, base64_decode(encoded));
+		char *tmp = base64_decode(encoded);
+		ASSERT_EQUALS_STR("decoding", decoded, tmp);
+		free(tmp);
 		END
 
 START(encode)
-		ASSERT_EQUALS_STR("encoding", encoded, base64_encode(decoded));
+		char *tmp = base64_encode(decoded);
+		ASSERT_EQUALS_STR("encoding", encoded, tmp);
+		free(tmp);
+		END
+
+START(utf8)
+		char *tmp;
+
+		tmp = base64_decode(encoded_utf8);
+		ASSERT_EQUALS_STR("UTF-8 decoding", decoded_utf8, tmp);
+		free(tmp);
+
+		tmp = base64_encode(decoded_utf8);
+		ASSERT_EQUALS_STR("UTF-8 encoding", encoded_utf8, tmp);
+		free(tmp);
+
 		END
 
 START(both_ways)
 		char *enc = base64_encode(decoded);
 		char *dec = base64_decode(enc);
-		ASSERT_EQUALS_STR("both ways", decoded, dec);
+		ASSERT_EQUALS_STR("both ways DEC", decoded, dec);
+		ASSERT_EQUALS_STR("both ways ENC", encoded, enc);
+		free(dec);
+		free(enc);
 		END
 
 START(big)
@@ -88,6 +111,7 @@ Suite *test_base64(const char title[]) {
 	tcase_add_checked_fixture(core, setup, teardown);
 	tcase_add_test(core, decode);
 	tcase_add_test(core, encode);
+	tcase_add_test(core, utf8);
 
 	suite_add_tcase(suite, core);
 
