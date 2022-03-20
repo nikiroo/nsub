@@ -60,10 +60,38 @@ typedef struct {
 /**
  * Instantiate a new cstring.
  *
+ * @note always identical to <tt>malloc</tt> + <tt>init_cstring</tt>
+ *
  * Create (and allocate the memory for) a new cstring.
  * Do not forget to call cstring_free(cstring) when done.
+ *
+ * @see malloc()
+ * @see init_cstring(cstring_t *self)
  */
 cstring_t *new_cstring();
+
+/**
+ * Instantiate a new cstring.
+ *
+ * Create (and allocate the memory for) a new cstring.
+ * Do not forget to call uninit_cstring(cstring_t *self) when done.
+ *
+ * @see new_cstring()
+ * @see uninit_cstring(cstring_t *self)
+ */
+int init_cstring(cstring_t *self);
+
+/**
+ * Free the given cstring.
+ *
+ * Free all the resources allocated for this cstring.
+ *
+ * @note always equivalent to <tt>uninit_cstring</tt> + <tt>free</tt>
+ *
+ * @see uninit_cstring(cstring_t *self)
+ * @see free(void *data)
+ */
+void free_cstring(cstring_t *self);
 
 /**
  * Free the given cstring.
@@ -72,7 +100,7 @@ cstring_t *new_cstring();
  *
  * @param self the cstring to free, which MUST NOT be used again afterward
  */
-void free_cstring(cstring_t *self);
+void uninit_cstring(cstring_t *self);
 
 /**
  * Grow the cstring to accommodate that many characters in addition to those
@@ -456,6 +484,20 @@ char *cstring_dirname(const char path[]);
  * @return TRUE if it is UTF-8
  */
 int cstring_is_utf8(cstring_t *self);
+
+/**
+ * Concat all the given string and return the concatenation as a newly allocated
+ * string that you now own.
+ *
+ * @note the last parameter <b>must</b> be NULL
+ *
+ * @note if NULL is passed as first parameter, NULL will be returned
+ *
+ * @param str1 the first string
+ *
+ * @return the concatenated string or NULL if str1 is NULL
+ */
+char *cstring_concat(const char str1[], ...);
 
 #endif
 

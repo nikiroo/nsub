@@ -36,6 +36,10 @@ SRunner *get_tests(int more) {
 	if (more)
 		add_test(test_base64_more("base64 -- more (longer)"));
 
+	add_test(test_desktop("desktop"));
+		if (more)
+			add_test(test_desktop_more("desktop -- more (longer)"));
+
 	return runner;
 }
 

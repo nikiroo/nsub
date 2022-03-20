@@ -130,22 +130,50 @@ typedef struct {
 /**
  * Create a new array.
  *
+ * @note always identical to <tt>malloc</tt> + <tt>init_array</tt>
+ *
  * @param elem_size the size of one element
- * @param initial the initial number of items the buffer can hold
+ * @param initial the initial number of items the buffer can hold (<b>not</b> 0)
+ *
+ * @see malloc()
+ * @see init_array(array_t *self)
  *
  * @return a new array (you must later call `free_array()` or `array_convert()`)
  */
 array_t *new_array(size_t elem_size, size_t initial);
+
+/**
+ * Create a new array.
+ *
+ * @param elem_size the size of one element
+ * @param initial the initial number of items the buffer can hold (<b>not</b> 0)
+ */
+int init_array(array_t *self, size_t elem_size, size_t initial);
 
 /** 
  * Free the resources held for the given array: you must not use it any more.
  * Note that if you use pointers and not direct data, you may want to free
  * those yourself first.
  *
+ * @note always equivalent to <tt>uninit_array</tt> + <tt>free</tt>
+ *
+ * @see uninit_array(array_t *self)
+ * @see free(void *data)
  * @see array_clear
  * @see array_loop
  */
 void free_array(array_t *me);
+
+/**
+ * Free the resources held for the given array: you must not use it any more.
+ * Note that if you use pointers and not direct data, you may want to free
+ * those yourself first.
+ *
+ * @see free_array(array_t *self)
+ * @see array_clear
+ * @see array_loop
+ */
+void uninit_array(array_t *me);
 
 /**
  * Clear the array, that is, resets its current size to 0 (buffer unchanged).
@@ -329,6 +357,30 @@ int array_push(array_t *me, void *data);
 int array_pushn(array_t *me, void *data, size_t n);
 
 /**
+ * Retrieve the content of an item.
+ * The item will be copied to the given address location if it exists.
+ *
+ * @param target an address where to write a copy of the item
+ * @param i the index of the element to retrieve
+ *
+ * @return TRUE if the item exists (if <tt>i</tt> is an element of the array)
+ */
+int array_copy(array_t *me, void *target, size_t i);
+
+/**
+ * Retrieve the content of multiple items if they exist.
+ * The items will be copied in a sequence to the given address location.
+ *
+ * @param target an address where to write a copy of the items
+ * @param i the index of the first element to retrieve
+ * @param n the number of elements to retrieve
+ *
+ * @return TRUE if the item exists (if <tt>i</tt> to <tt>n</tt> are elements
+ * 		of the array)
+ */
+int array_copyn(array_t *me, void *target, size_t i, size_t n);
+
+/**
  * Set an element of the array to the given value.
  * Can also append a new elements.
  * Memory will be copied from the given data to the array.
@@ -360,114 +412,6 @@ int array_set(array_t *me, size_t i, void *data);
  * 	contiguous memory for its needs, or if the index is out of bounds
  */
 int array_setn(array_t *me, size_t i, void *data, size_t n);
-
-/**
- * Retrieve the content of an item.
- * The item will be copied to the given address location if it exists.
- *
- * @param target an address where to write a copy of the item
- * @param i the index of the element to retrieve
- *
- * @return TRUE if the item exists (if <tt>i</tt> is an element of the array)
- */
-int array_copy(array_t *me, void *target, size_t i);
-
-/**
- * Retrieve the content of multiple items if they exist.
- * The items will be copied in a sequence to the given address location.
- *
- * @param target an address where to write a copy of the items
- * @param i the index of the first element to retrieve
- * @param n the number of elements to retrieve
- *
- * @return TRUE if the item exists (if <tt>i</tt> to <tt>n</tt> are elements
- * 		of the array)
- */
-int array_copyn(array_t *me, void *target, size_t i, size_t n);
-
-/**
- * Read all the lines from a file.
- *
- * All the lines are supposed to be \n-terminated.
- *
- * @param in the file to read from
- * @param doline a function that will receive the data for each line
- * @param (parameters)
- * 	* `me`: the array we work on (the one you passed to 
- * 		`array_readfile()` itself)
- * 	* `line`: a read-only copy of the current line
- *
- * @return the number of elements in the array
- */
-size_t array_readfile(array_t *me, FILE *in,
-		void (*doline)(array_t *me, const char line[]));
-
-/**
- * Read all the lines from a file, converting them to integer values.
- *
- * Note that the integer conversion will only convert the initial portion of
- * each line if the rest is not considered numerical (also, if it fails to
- * convert, it will simply store the value 0 for this line).
- *
- * @see array_readfile
- *
- * @param in the file to read
- *
- * @return the number of elements in the array
- */
-size_t array_readfilei(array_t *me, FILE *in);
-
-/**
- * Read all the lines from a file, converting them to strings.
- *
- * Note that you will need to free them before freeing the array,
- * for instance with the <tt>array_loop</tt> macro.
- *
- * @see array_loop
- * @see array_readfile
- *
- * @param in the file to read
- *
- * @return the number of elements in the array
- */
-size_t array_readfiles(array_t *me, FILE *in);
-
-/**
- * Print the array metadata to `stderr` (mostly for DEBUG).
- */
-void array_print(array_t *me);
-
-/**
- * Print the array and strings content to `stderr` (mostly for DEBUG).
- */
-void array_prints(array_t *me);
-
-/**
- * Print the array and integer content to `stderr` (mostly for DEBUG).
- */
-void array_printi(array_t *me);
-
-/**
- * Print the array and long content to `stderr` (mostly for DEBUG).
- */
-void array_printl(array_t *me);
-
-/**
- * Print the array and floats (%d) content to `stderr` (mostly for DEBUG).
- */
-void array_printf(array_t *me);
-
-/** 
- * Print the array and content to `stderr` (mostly for DEBUG).
- *
- * @param display a function that gives a textual representation of an item
- * @param (parameters)
- * 	* `item`: the item to describe
- * 	* `buffer`: the buffer to use for this (which is the one you pass)
- * @param buffer a buffer that will be passed to `display`
- */
-void array_print_fmt(array_t *me, void (*display)(char *buffer, void *item),
-		char *buffer);
 
 #endif /* ARRAY_H */
 

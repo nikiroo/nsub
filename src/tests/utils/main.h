@@ -28,5 +28,7 @@ Suite *test_array(const char title[]);
 Suite *test_array_more(const char title[]);
 Suite *test_base64(const char title[]);
 Suite *test_base64_more(const char title[]);
+Suite *test_desktop(const char title[]);
+Suite *test_desktop_more(const char title[]);
 
 #endif /* SRC_TESTS_UTILS_MAIN_H_ */

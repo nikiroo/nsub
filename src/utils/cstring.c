@@ -66,27 +66,48 @@ static char *locale = NULL;
 // end of privates
 
 cstring_t *new_cstring() {
-	cstring_t *string;
+	cstring_t *self = malloc(sizeof(cstring_t));
+	if (!init_cstring(self)) {
+		free(self);
+		self = NULL;
+	}
 
-	string = malloc(sizeof(cstring_t));
-	strcpy(string->CNAME, "[CString]");
-	string->priv = malloc(sizeof(priv_t));
-	string->length = 0;
-	((priv_t *) string->priv)->buffer_length = BUFFER_SIZE;
-	string->string = malloc(sizeof(char) * BUFFER_SIZE);
-	string->string[0] = '\0';
-
-	return string;
+	return self;
 }
 
-void free_cstring(cstring_t *string) {
-	if (!string)
-		return;
+int init_cstring(cstring_t *self) {
+	strcpy(self->CNAME, "[CString]");
 
-	free(string->priv);
-	free(string->string);
+	self->priv = malloc(sizeof(priv_t));
+	if (!self->priv)
+		return 0;
+	self->string = malloc(sizeof(char) * BUFFER_SIZE);
+	if (!self->string) {
+		free(self->priv);
+		return 0;
+	}
 
-	free(string);
+	self->length = 0;
+	((priv_t *) self->priv)->buffer_length = BUFFER_SIZE;
+	self->string[0] = '\0';
+
+	return 1;
+}
+
+void free_cstring(cstring_t *self) {
+	if (self)
+		uninit_cstring(self);
+
+	free(self);
+}
+
+void uninit_cstring(cstring_t *self) {
+	free(self->priv);
+	free(self->string);
+	self->priv = NULL;
+	self->string = NULL;
+	self->length = 0;
+	self->CNAME[0] = '!';
 }
 
 void cstring_swap(cstring_t *a, cstring_t *b) {
@@ -716,4 +737,37 @@ int cstring_is_utf8(cstring_t *self) {
 	size_t rep = mbstowcs(NULL, self->string, 0);
 	// -2 = invalid, -1 = not whole
 	return (rep != (size_t) -2) && (rep != (size_t) -1);
+}
+
+char *cstring_concat(const char str1[], ...) {
+	if (!str1)
+		return NULL;
+
+	va_list args;
+	size_t total;
+	size_t prec;
+	char *arg;
+	char *ptr;
+	char *rep;
+
+	total = strlen(str1);
+	va_start(args, str1);
+	while ((arg = va_arg(args, char *))) {
+		total += strlen(arg);
+	}
+	va_end(args);
+
+	rep = malloc(total * sizeof(char) + 1);
+	ptr = rep;
+	ptr = strcpy(ptr, str1);
+	prec = strlen(str1);
+
+	va_start(args, str1);
+	while ((arg = va_arg(args, char *))) {
+		ptr = strcpy(ptr + prec, arg);
+		prec = strlen(arg);
+	}
+	va_end(args);
+
+	return rep;
 }

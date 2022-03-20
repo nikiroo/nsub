@@ -29,23 +29,24 @@
 
 #define EXT "desktop"
 
-struct {
-	char *name;
-	char *icon;
-	char *icon_file;
-	char *exec;
-	array_t *children;
-	int id;
-}typedef desktop_p;
-
 /* Private functions */
 static int desktop_compare(const void *a, const void* b);
-static char *desktop_concat(const char str1[], ...);
 static int desktop_test_file(const char filename[]);
 /* */
 
-desktop *new_desktop(const char filename[], int best_size) {
-	desktop_p *me = malloc(sizeof(desktop_p));
+desktop_t *new_desktop(const char filename[], int best_size) {
+	desktop_t *me = malloc(sizeof(desktop_t));
+	if (!init_desktop(me, filename, best_size)) {
+		free(me);
+		me = NULL;
+	}
+
+	return me;
+}
+
+int init_desktop(desktop_t *me, const char filename[], int best_size) {
+	strcpy(me->CNAME, "[Desktop]");
+
 	me->name = NULL;
 	me->exec = NULL;
 	me->icon = NULL;
@@ -94,79 +95,73 @@ desktop *new_desktop(const char filename[], int best_size) {
 			me->icon_file = desktop_find_icon("folder", best_size);
 		}
 
-		me->children = new_array(sizeof(desktop_p*), 32);
+		me->children = new_array(sizeof(desktop_t*), 32);
 		for (struct dirent *ep = readdir(dp); ep; ep = readdir(dp)) {
 			if (!strcmp(ep->d_name, "."))
 				continue;
 			if (!strcmp(ep->d_name, ".."))
 				continue;
-			char *childname = desktop_concat(filename, "/", ep->d_name, NULL);
-			desktop_p *child = (desktop_p*) new_desktop(childname, best_size);
+
+			desktop_t *child = array_new(me->children);
+			char *childname = cstring_concat(filename, "/", ep->d_name, NULL);
+			if (!init_desktop(child, childname, best_size))
+				array_pop(me->children);
 			free(childname);
-			if (child) {
-				array_push(me->children, &child);
-			}
 		}
 
 		array_qsort(me->children, desktop_compare);
 
 		closedir(dp);
 		free(ext);
-		return (desktop*) me;
+		return 1;
 	}
 
 	// Only process ".desktop" files
 	if (!ext || strcmp(ext, EXT)) {
-		free_desktop((desktop *) me);
+		free_desktop(me);
 		free(ext);
-		return NULL;
+		return 0;
 	}
 
 	FILE *file;
-	array_t *tab;
-
-	tab = new_array(sizeof(char *), 32);
+	cstring_t *line;
+	char *startsWith;
 
 	file = fopen(filename, "r");
-	array_readfiles(tab, file);
-	fclose(file);
+	if (file) {
+		line = new_cstring();
+		while (cstring_readline(line, file)) {
+			startsWith = "Name=";
+			if (cstring_starts_with(line->string, startsWith, 0)) {
+				free(me->name);
+				me->name = strdup(line->string + strlen(startsWith));
+			}
 
-	char *startsWith;
-	size_t n;
-	array_loop_i(tab, line, char, i) {
-		startsWith = "Name=";
-		n = strlen(startsWith);
-		if (!strncmp(line, startsWith, n)) {
-			free(me->name);
-			me->name = strdup(line + n);
-		}
-
-		startsWith = "Exec=";
-		n = strlen(startsWith);
-		if (!strncmp(line, startsWith, n)) {
-			free(me->exec);
-			me->exec = strdup(line + n);
-			// TODO: %f %F %u %U %i %c %k: inject values instead
-			char *cars = "ifFuUck";
-			for (char *ptr = index(me->exec, '%'); ptr; ptr = index(ptr, '%')) {
-				if (index(cars, ptr[1])) {
-					ptr[0] = ' ';
-					ptr[1] = ' ';
+			startsWith = "Exec=";
+			if (cstring_starts_with(line->string, startsWith, 0)) {
+				free(me->exec);
+				me->exec = strdup(line->string + strlen(startsWith));
+				// TODO: %f %F %u %U %i %c %k: inject values instead
+				char *cars = "ifFuUck";
+				for (char *ptr = index(me->exec, '%'); ptr;
+						ptr = index(ptr, '%')) {
+					if (index(cars, ptr[1])) {
+						ptr[0] = ' ';
+						ptr[1] = ' ';
+					}
+					ptr++;
 				}
-				ptr++;
+			}
+
+			startsWith = "Icon=";
+			if (cstring_starts_with(line->string, startsWith, 0)) {
+				free(me->icon);
+				me->icon = strdup(line->string + strlen(startsWith));
 			}
 		}
-
-		startsWith = "Icon=";
-		n = strlen(startsWith);
-		if (!strncmp(line, startsWith, n)) {
-			free(me->icon);
-			me->icon = strdup(line + n);
-		}
+		free_cstring(line);
+		fclose(file);
 	}
-
-	array_loop(tab, item, void)
-		free(item);
 
 	// Find icon file linked to icon
 	if (me->icon && !me->icon_file) {
@@ -178,66 +173,37 @@ desktop *new_desktop(const char filename[], int best_size) {
 	}
 
 	free(ext);
-	return (desktop *) me;
+	return 1;
 }
 
-void free_desktop(desktop *app) {
-	desktop_p *me = (desktop_p*) app;
-
-	if (!me)
-		return;
-
-	free(me->name);
-	free(me->exec);
-	free(me->icon);
-	free(me->icon_file);
-	free_array(me->children);
+void free_desktop(desktop_t *me) {
+	if (me)
+		uninit_desktop(me);
 
 	free(me);
 }
 
-const char *desktop_get_name(desktop *app) {
-	desktop_p *me = (desktop_p*) app;
-	return me->name;
+void uninit_desktop(desktop_t *me) {
+	free(me->name);
+	free(me->exec);
+	free(me->icon);
+	free(me->icon_file);
+	me->name = NULL;
+	me->exec = NULL;
+	me->icon = NULL;
+	me->icon_file = NULL;
+	free_array(me->children);
+	me->children = NULL;
+	me->CNAME[0] = '!';
 }
 
-const char *desktop_get_exec(desktop *app) {
-	desktop_p *me = (desktop_p*) app;
-	return me->exec;
-}
+desktop_t *desktop_find_id(array_t *children, int id) {
+	desktop_t *found = NULL;
 
-const char *desktop_get_icon(desktop *app) {
-	desktop_p *me = (desktop_p*) app;
-	return me->icon;
-}
-
-const char *desktop_get_icon_file(desktop *app) {
-	desktop_p *me = (desktop_p*) app;
-	return me->icon_file;
-}
-
-int desktop_get_id(desktop *app) {
-	desktop_p *me = (desktop_p*) app;
-	return me->id;
-}
-
-void desktop_set_id(desktop *app, int id) {
-	desktop_p *me = (desktop_p*) app;
-	me->id = id;
-}
-
-array_t *desktop_get_children(desktop *app) {
-	desktop_p *me = (desktop_p*) app;
-	return me->children;
-}
-
-desktop *desktop_find_id(array_t *children, int id) {
-	desktop *found = NULL;
-
-	array_loop(children, child, desktop_p)
+	array_loop(children, child, desktop_t)
 	{
 		if (child->id == id) {
-			found = (desktop*) child;
+			found = child;
 			break;
 		}
 
@@ -251,39 +217,9 @@ desktop *desktop_find_id(array_t *children, int id) {
 
 /* Private functions */
 
-static char *desktop_concat(const char str1[], ...) {
-	va_list args;
-	size_t total;
-	size_t prec;
-	char *arg;
-	char *ptr;
-	char *rep;
-
-	total = strlen(str1);
-	va_start(args, str1);
-	while ((arg = va_arg(args, char *))) {
-		total += strlen(arg);
-	}
-	va_end(args);
-
-	rep = malloc(total * sizeof(char) + 1);
-	ptr = rep;
-	ptr = strcpy(ptr, str1);
-	prec = strlen(str1);
-
-	va_start(args, str1);
-	while ((arg = va_arg(args, char *))) {
-		ptr = strcpy(ptr + prec, arg);
-		prec = strlen(arg);
-	}
-	va_end(args);
-
-	return rep;
-}
-
 static int desktop_compare(const void *a, const void* b) {
-	desktop_p *me1 = ((desktop_p**) a)[0];
-	desktop_p *me2 = ((desktop_p**) b)[0];
+	desktop_t *me1 = ((desktop_t**) a)[0];
+	desktop_t *me2 = ((desktop_t**) b)[0];
 
 	if (me1->children && !(me2->children))
 		return -1;
@@ -313,7 +249,7 @@ static int desktop_test_file(const char filename[]) {
 
 #define TRY_DIR(a,b,c) \
 	do { \
-		tmp = desktop_concat(a, b, c, basename, ".png", NULL); \
+		tmp = cstring_concat(a, b, c, basename, ".png", NULL); \
 		if(desktop_test_file(tmp)) \
 			return tmp; \
 		free(tmp); \
@@ -328,44 +264,39 @@ char *desktop_find_icon(const char basename[], int icon_size) {
 	sprintf(icon_size_str, "%dx%d", icon_size, icon_size);
 
 	if (!theme) {
-		array_t *tab = new_array(sizeof(char *), 32);
-
-		tmp = desktop_concat(home, "/.gtkrc-2.0", NULL);
+		tmp = cstring_concat(home, "/.gtkrc-2.0", NULL);
 		FILE *file = fopen(tmp, "r");
 		free(tmp);
 		if (file) {
-			array_readfiles(tab, file);
-			fclose(file);
-		}
+			const char *startsWith = "gtk-icon-theme-name=";
+			size_t n = strlen(startsWith);
 
-		const char *startsWith = "gtk-icon-theme-name=";
-		size_t n = strlen(startsWith);
-
-		array_loop(tab, line, char)
-		{
-			if (!strncmp(line, startsWith, n)) {
-				free(theme);
-				if (line[n] == '"') {
-					theme = strdup(line + n + 1);
-					theme[strlen(theme) - 1] = '\0';
-				} else {
-					theme = strdup(line + n);
+			cstring_t *line = new_cstring();
+			while (cstring_readline(line, file)) {
+				if (cstring_starts_with(line->string, startsWith, 0)) {
+					free(theme);
+					if (line->string[n] == '"') {
+						theme = strdup(line->string + n + 1);
+						theme[strlen(theme) - 1] = '\0';
+					} else {
+						theme = strdup(line->string + n);
+					}
 				}
 			}
-		}
+			free_cstring(line);
+			fclose(file);
 
-		if (!theme || !theme[0]) {
-			theme = strdup("");
-			ltheme = strdup("");
-		} else {
-			tmp = theme;
-			theme = desktop_concat("/usr/share/icons/", tmp, "/", NULL);
-			ltheme = desktop_concat(home, "/", ".icons/", tmp, "/", NULL);
-			free(tmp);
-		}
+			if (!theme || !theme[0]) {
+				theme = strdup("");
+				ltheme = strdup("");
+			} else {
+				tmp = theme;
+				theme = cstring_concat("/usr/share/icons/", tmp, "/", NULL);
+				ltheme = cstring_concat(home, "/", ".icons/", tmp, "/", NULL);
+				free(tmp);
+			}
 
-		array_loop(tab,item, void)
-			free(item);
+		}
 	}
 
 	// Allow NULL

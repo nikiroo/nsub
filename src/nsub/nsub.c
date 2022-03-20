@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include "nsub.h"
-#include "utils/array.h"
 #include "utils/utils.h"
 
 /* Public */
@@ -104,16 +103,18 @@ void song_add_meta(song_t *song, char *key, char *value) {
 }
 
 song_t *nsub_read(FILE *in, NSUB_FORMAT fmt) {
-	array_t *lines = new_array(sizeof(char *), 80);
-	array_readfiles(lines, in);
-
 	song_t *song = new_song();
-	array_loop_i(lines, line, char, i)
-	{
+
+	cstring_t *line = new_cstring();
+	size_t i = 0;
+	while (cstring_readline(line, in)) {
+		i++;
+
 		switch (fmt) {
 		case NSUB_FMT_LRC:
-			if (!nsub_read_lrc(song, line)) {
-				fprintf(stderr, "Read error on line %zu: <%s>\n", i, line);
+			if (!nsub_read_lrc(song, line->string)) {
+				fprintf(stderr, "Read error on line %zu: <%s>\n", i,
+						line->string);
 				song = NULL;
 				goto fail;
 			}
@@ -128,9 +129,7 @@ song_t *nsub_read(FILE *in, NSUB_FORMAT fmt) {
 
 	fail:
 
-	array_loop(lines, line, void)
-		free(line);
-
+	free_cstring(line);
 	return song;
 }
 

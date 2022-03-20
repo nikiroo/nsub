@@ -52,7 +52,38 @@ extern "C" {
 /**
  * The structure used to represent desktop objects.
  */
-typedef struct desktop_p desktop;
+struct {
+	char CNAME[10];
+	/** The user name of the desktop object. */
+	char *name;
+	/** The icon name, if any. */
+	char *icon;
+	/** The icon file that corresponds, if any. */
+	char *icon_file;
+	/** The EXEC command to start. */
+	char *exec;
+	/** The submenu items of this desktop object (for a menu/submenu). */
+	array_t *children;
+	/** A custom external ID for this desktop object, for your own use. */
+	int id;
+}typedef desktop_t;
+
+/**
+ * Create a new desktop object from the given <tt>.desktop</tt> file.
+ *
+ * @note always identical to <tt>malloc</tt> + <tt>init_desktop</tt>
+ *
+ * @param filename the path to the actual <tt>.desktop</tt> file
+ * @param best_size the default size for the icon (see icon selection in the
+ * 		description of the {@see desktop} object
+ *
+ * @see malloc()
+ * @see init_desktop(desktop_t *self, const char filename[], int best_size)
+ * @see free_desktop(desktop_t *self)
+ *
+ * @return the desktop object
+ */
+desktop_t *new_desktop(const char filename[], int best_size);
 
 /**
  * Create a new desktop object from the given <tt>.desktop</tt> file.
@@ -61,46 +92,29 @@ typedef struct desktop_p desktop;
  * @param best_size the default size for the icon (see icon selection in the
  * 		description of the {@see desktop} object
  *
- * @return the desktop object
- */
-desktop *new_desktop(const char filename[], int best_size);
-
-/**
- * Free the given desktop object
- */
-void free_desktop(desktop *self);
-
-/** Return the name of the desktop object (you do <b>not</b> own it). */
-const char *desktop_get_name(desktop *self);
-/** Return the exec command of the desktop object (you do <b>not</b> own it). */
-const char *desktop_get_exec(desktop *self);
-/** Return the icon name of the desktop object (you do <b>not</b> own it). */
-const char *desktop_get_icon(desktop *self);
-/** Return the icon file of the desktop object (you do <b>not</b> own it). */
-const char *desktop_get_icon_file(desktop *self);
-
-/**
- * Return the external ID of this desktop object
- * ({@see desktop_set_id(desktop*, int)}.
+ * @see new_desktop(const char filename[], int best_size)
+ * @see uninit_desktop(desktop_t *self)
  *
- * @return the external ID
+ * @return TRUE if success (could fail if the target is not a <tt>.desktop</tt>
+ * 		file
  */
-int desktop_get_id(desktop *self);
+int init_desktop(desktop_t *self, const char filename[], int best_size);
 
 /**
- * Set a custom external ID for this desktop object, for your own use.
+ * Free the given desktop object.
  *
- * @param id the ID to set
+ * @note always equivalent to <tt>uninit_desktop</tt> + <tt>free</tt>
+ *
+ * @see uninit_desktop(desktop_t *self)
+ * @see free(void *data)
  */
-void desktop_set_id(desktop *self, int id);
+void free_desktop(desktop_t *self);
 
 /**
- * Return all the submenu items of this desktop objects (for a menu/submenu).
- *
- * TODO: switch to full objects
- * @return an array of pointers to desktop objects
+ * Free the resources used by the given desktop object -- do not use it anymore
+ * after this call.
  */
-array_t *desktop_get_children(desktop *app);
+void uninit_desktop(desktop_t *self);
 
 /**
  * Find a submenu item by the given ID ({@see desktop_set_id(desktop *, int)}).
@@ -111,7 +125,7 @@ array_t *desktop_get_children(desktop *app);
  *
  * @return the given submenu if found, or NULL
  */
-desktop *desktop_find_id(array_t *children, int menu_id);
+desktop_t *desktop_find_id(array_t *children, int menu_id);
 
 /**
  * Look for the icon file related to this basename.
@@ -119,6 +133,8 @@ desktop *desktop_find_id(array_t *children, int menu_id);
  * @param basename the base name of the icon we want to look for
  * @param icon_size the best_size to use for the icon (see the description of
  * 		the {@desktop} object)
+ *
+ * @return the path to the best related icon we found (you own it), or NULL
  */
 char *desktop_find_icon(const char basename[], int icon_size);
 

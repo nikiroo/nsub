@@ -43,46 +43,59 @@ static int array_qsorti_rfunc(const void *a, const void *b);
 static int array_qsortl_rfunc(const void *a, const void *b);
 static int array_qsortf_rfunc(const void *a, const void *b);
 
-/* for reafilei, readfiles */
-static void array_readfile_funci(array_t *me, const char line[]);
-static void array_readfile_funcs(array_t *me, const char line[]);
-
 array_t *new_array(size_t elem_size, size_t initial) {
-	array_t *me = NULL;
+	if (!initial)
+		return NULL;
 
-	if (initial)
-		me = malloc(sizeof(array_t));
-
-	if (me) {
-		me->priv = malloc(sizeof(priv_t));
-		if (me->priv) {
-			priv_t *priv = (priv_t *) me->priv;
-			strcpy(me->CNAME, "[CArray ]");
-			priv->elem_size = elem_size;
-			me->count = 0;
-			priv->buffer = initial;
-			priv->data = malloc(elem_size * initial);
-			if (!priv->data) {
-				free(me->priv);
-				free(me);
-				me = NULL;
-			}
-		}
+	array_t *me = malloc(sizeof(array_t));
+	if (!init_array(me, elem_size, initial)) {
+		free(me);
+		me = NULL;
 	}
 
 	return me;
 }
 
-void free_array(array_t *me) {
-	if (!me)
-		return;
+int init_array(array_t *me, size_t elem_size, size_t initial) {
+	if (!initial)
+		return 0;
 
+	strcpy(me->CNAME, "[CArray ]");
+
+	me->priv = malloc(sizeof(priv_t));
+	if (!me->priv)
+		return 0;
+
+	priv_t *priv = (priv_t *) me->priv;
+	strcpy(me->CNAME, "[CArray ]");
+	priv->elem_size = elem_size;
+	me->count = 0;
+	priv->buffer = initial;
+	priv->data = malloc(elem_size * initial);
+	if (!priv->data) {
+		free(me->priv);
+		return 0;
+	}
+
+	return 1;
+}
+
+void free_array(array_t *me) {
+	if (me)
+		uninit_array(me);
+
+	free(me);
+}
+
+void uninit_array(array_t *me) {
 	priv_t *priv = (priv_t *) me->priv;
 	me->count = 0;
 	priv->buffer = 0;
 	free(priv->data);
+	priv->data = NULL;
 	free(priv);
-	free(me);
+	me->priv = NULL;
+	me->CNAME[0] = '!';
 }
 
 void array_clear(array_t *me) {
@@ -305,119 +318,6 @@ int array_setn(array_t *me, size_t i, void *data, size_t n) {
 	return 1;
 }
 
-size_t array_readfilei(array_t *me, FILE *in) {
-	return array_readfile(me, in, array_readfile_funci);
-}
-
-size_t array_readfiles(array_t *me, FILE *in) {
-	return array_readfile(me, in, array_readfile_funcs);
-}
-
-size_t array_readfile(array_t *me, FILE *in,
-		void (*doline)(array_t *me, const char line[])) {
-	array_t *mot = NULL;
-
-	char zero = '\0';
-	char buffer[4096];
-	size_t i, n, start, count;
-	mot = new_array(sizeof(char), 80);
-	priv_t *mot_priv = (priv_t *) mot->priv;
-
-	count = 0;
-	for (n = fread(buffer, sizeof(char), sizeof(buffer), in)
-	; n; n = fread(buffer, sizeof(char), sizeof(buffer), in)) {
-		for (i = 0; i < n; i++) {
-			for (start = i; i < n && buffer[i] != '\n'; i++)
-				;
-			if (i > start) {
-				array_pushn(mot, buffer + start, (i - start));
-			}
-
-			if (i == start || (i < n && buffer[i] == '\n')) {
-				array_push(mot, &zero);
-				doline(me, mot_priv->data);
-				count++;
-				array_clear(mot);
-			}
-		}
-	}
-
-	if (mot->count) {
-		array_push(mot, &zero);
-		doline(me, mot_priv->data);
-		count++;
-	}
-
-	free_array(mot);
-	return count;
-}
-
-void array_print(array_t *me) {
-	array_print_fmt(me, NULL, NULL);
-}
-
-void array_prints(array_t *me) {
-	priv_t *priv = (priv_t *) me->priv;
-
-	array_print_fmt(me, NULL, NULL);
-	for (size_t i = 0; i < me->count; i++) {
-		void *d = (void *) (((void **) priv->data)[i]);
-		fprintf(stdout, "> %zu: %s\n", i, (char *) d);
-	}
-}
-
-void array_printi(array_t *me) {
-	priv_t *priv = (priv_t *) me->priv;
-
-	array_print_fmt(me, NULL, NULL);
-	int *ii = malloc(me->count * priv->elem_size);
-	memcpy(ii, priv->data, me->count * priv->elem_size);
-	for (size_t i = 0; i < me->count; i++) {
-		fprintf(stdout, "> %zu: %d\n", i, ii[i]);
-	}
-	free(ii);
-}
-
-void array_printl(array_t *me) {
-	priv_t *priv = (priv_t *) me->priv;
-
-	array_print_fmt(me, NULL, NULL);
-	long *l = malloc(me->count * priv->elem_size);
-	memcpy(l, priv->data, me->count * priv->elem_size);
-	for (size_t i = 0; i < me->count; i++) {
-		fprintf(stdout, "> %zu: %ld\n", i, l[i]);
-	}
-	free(l);
-}
-
-void array_printf(array_t *me) {
-	priv_t *priv = (priv_t *) me->priv;
-
-	array_print_fmt(me, NULL, NULL);
-	float *f = malloc(me->count * priv->elem_size);
-	memcpy(f, priv->data, me->count * priv->elem_size);
-	for (size_t i = 0; i < me->count; i++) {
-		fprintf(stdout, "> %zu: %f\n", i, f[i]);
-	}
-	free(f);
-}
-
-void array_print_fmt(array_t *me, void (*display)(char *buffer, void *),
-		char *buffer) {
-	priv_t *priv = (priv_t *) me->priv;
-
-	fprintf(stdout,
-			"Array of %zu elements of %zu bytes (buffer of %zu elements)\n",
-			me->count, priv->elem_size, priv->buffer);
-	if (display) {
-		for (size_t i = 0; i < me->count; i++) {
-			void *d = (void *) (((void **) priv->data)[i]);
-			display(d, buffer);
-			fprintf(stdout, "> %zu: %s\n", i, buffer);
-		}
-	}
-}
-
 /* Privates functions */
 
 static int array_assure(array_t *me, size_t nb_elem) {
@@ -437,16 +337,4 @@ static int array_assure(array_t *me, size_t nb_elem) {
 	}
 
 	return 1;
-}
-
-static void array_readfile_funci(array_t *me, const char line[]) {
-	int i = atoi(line);
-	array_push(me, &i);
-}
-
-static void array_readfile_funcs(array_t *me, const char line[]) {
-	char *myline = malloc((strlen(line) + 1) * sizeof(char));
-	strcpy(myline, line);
-	char **n = array_new(me);
-	*n = myline;
 }

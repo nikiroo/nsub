@@ -390,9 +390,12 @@ START(rfind)
 		ASSERT_EQUALS_INT("(a) find error", 0, cstring_rfind(str, "Une", 0));
 		ASSERT_EQUALS_INT("(b) find error", 0, cstring_rfind(str, "Une", 1));
 		ASSERT_EQUALS_INT("(c) find error", 4, cstring_rfind(str, "petite", 0));
-		ASSERT_EQUALS_INT("(d) find error", 4, cstring_rfind(str, "petite", 11));
-		ASSERT_EQUALS_INT("(e) find error", -1, cstring_rfind(str, "petite", 2));
-		ASSERT_EQUALS_INT("(f) find error", 38, cstring_rfind(str, "choses", 0));
+		ASSERT_EQUALS_INT("(d) find error", 4,
+				cstring_rfind(str, "petite", 11));
+		ASSERT_EQUALS_INT("(e) find error", -1,
+				cstring_rfind(str, "petite", 2));
+		ASSERT_EQUALS_INT("(f) find error", 38,
+				cstring_rfind(str, "choses", 0));
 		ASSERT_EQUALS_INT("(g) find error", -1, cstring_rfind(str, "Oops", 0));
 		ASSERT_EQUALS_INT("(h) find error", 42, cstring_rfind(str, "e", 0));
 		ASSERT_EQUALS_INT("(i) find error", 42, cstring_rfind(str, "e", -1));
@@ -774,6 +777,29 @@ START(dirname)
 
 		END
 
+START(concat)
+		char *cc;
+
+		cc = cstring_concat(NULL);
+		if (cc)
+			FAIL("concat of NULL should return NULL, not: <%s>", cc);
+
+		cc = cstring_concat("only", NULL);
+		ASSERT_EQUALS_STR("Single parameter", "only", cc);
+		free(cc);
+
+		cc = cstring_concat("Only", "Fans", NULL);
+		ASSERT_EQUALS_STR("Test 2 params", "OnlyFans", cc);
+		free(cc);
+
+		cc = cstring_concat("Fanfan", " ", "et", " Tulipe",
+				" entrent dans un bar", NULL);
+		ASSERT_EQUALS_STR("Test multiple params",
+				"Fanfan et Tulipe entrent dans un bar", cc);
+		free(cc);
+
+		END
+
 START(many_adds)
 		size_t count = 10 * 1000 * 1000;
 		for (size_t i = 0; i < count; i++) {
@@ -815,6 +841,7 @@ Suite *test_cstring(const char title[]) {
 	tcase_add_test(core, pop_path);
 	tcase_add_test(core, basename);
 	tcase_add_test(core, dirname);
+	tcase_add_test(core, concat);
 
 	suite_add_tcase(suite, core);
 

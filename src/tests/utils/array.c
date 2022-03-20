@@ -180,7 +180,7 @@ START(pop)
 		ASSERT_EQUALS_INT("bad item popped", (int )'T', (int )*rep);
 
 		if (a->count)
-			FAIL("popped 1-sized array still has %d items", a->count);
+			FAIL("popped 1-sized array still has %zu items", a->count);
 
 		rep = array_new(a);
 		*rep = 'T';
@@ -247,10 +247,6 @@ START(NO_TEST_YET_set)
 		END
 START(NO_TEST_YET_copy)
 		END
-START(NO_TEST_YET_readfile)
-		END
-START(NO_TEST_YET_print)
-		END
 
 Suite *test_array(const char title[]) {
 	Suite *suite = suite_create(title);
@@ -272,8 +268,6 @@ Suite *test_array(const char title[]) {
 	tcase_add_test(core, NO_TEST_YET_push);
 	tcase_add_test(core, NO_TEST_YET_set);
 	tcase_add_test(core, NO_TEST_YET_copy);
-	tcase_add_test(core, NO_TEST_YET_readfile);
-	tcase_add_test(core, NO_TEST_YET_print);
 
 	suite_add_tcase(suite, core);
 
