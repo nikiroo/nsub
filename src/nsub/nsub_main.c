@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
 
 	FILE *out = stdout;
 	if (!rep && out_file && !(out_file[0] == '-' && !out_file[1])) {
-		out = fopen(out_file, "wb");
+		out = fopen(out_file, "w");
 		if (!in) {
 			fprintf(stderr, "Cannot create output file: %s\n", out_file);
 			rep = 3;
