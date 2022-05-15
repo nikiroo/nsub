@@ -31,8 +31,10 @@ HEADERS=$(wildcard nsub/*.h)
 ##	$(CC) $(CFLAGS) $^ -o $@
 
 ## Quicker:
-../bin/nsub: $(SOURCES) $(HEADERS) ../bin/libutils.o
-	$(CC) $(CFLAGS) $^ -o $@
+../bin/nsub: $(SOURCES) $(HEADERS)
+	# In two steps, so it works with clang, too
+	$(CC) $(CFLAGS) $^ -c && mv *.o nsub/
+	$(CC) nsub/*.o ../bin/libutils.o -o $@ && rm -f nsub/*.o nsub/*.h.gch
 
 clean:
 	rm -f nsub/*.o
