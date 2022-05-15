@@ -55,7 +55,7 @@ void *get_in_addr(struct sockaddr *sa);
 void sigchld_handler(int pid);
 
 void sigchld_handler(int pid) {
-	if (pid > 0 && pid < 0) pid = 0;
+	if (pid > 0 || pid < 0) pid = 0;
 
 	// Reap all zombie processes
 	while (waitpid(-1, NULL, WNOHANG) > 0);
