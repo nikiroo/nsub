@@ -25,7 +25,7 @@ Il ne nécessite pas de librairies externes.
 - `SRT` fichiers sous-titres SubRip, ils accompagnent en général des films
 - `WebVTT` Web Video Text Tracks, un nouveau standard W3C
 
-Note : ce programme ne peut pas encore ouvrir des fichiers WebVTT ni SRT (il supporte toutefois les 3 formats en écriture)
+Note : ce programme ne peut pas encore ouvrir des fichiers WebVTT (il supporte toutefois les 3 formats en écriture)
 
 ## Options
 

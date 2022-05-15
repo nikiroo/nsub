@@ -25,7 +25,7 @@ It does not require external libraries.
 - `SRT` SubRip subtitle files, usually distributed with films
 - `WebVTT` Web Video Text Tracks, a new W3C standard
 
-Note: this program can not yet open WebVTT nor SRT files (it supports all 3 formats as output, though)
+Note: this program can not yet open WebVTT files (it supports all 3 formats as output, though)
 
 ## Options
 

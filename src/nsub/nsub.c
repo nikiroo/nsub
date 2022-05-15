@@ -103,25 +103,32 @@ void song_add_meta(song_t *song, char *key, char *value) {
 }
 
 song_t *nsub_read(FILE *in, NSUB_FORMAT fmt) {
-	song_t *song = new_song();
+	song_t *song = NULL;
+	cstring_t *line = NULL;
 
-	cstring_t *line = new_cstring();
+	/* Which reader? */
+	int (*read_a_line)(song_t *, char *) = NULL;
+	switch (fmt) {
+	case NSUB_FMT_LRC:
+		read_a_line = nsub_read_lrc;
+		break;
+	case NSUB_FMT_SRT:
+		read_a_line = nsub_read_srt;
+		break;
+	default:
+		fprintf(stderr, "Unsupported read format %d\n", fmt);
+		goto fail;
+	}
+
+	/* Read it */
+	song = new_song();
+	line = new_cstring();
 	size_t i = 0;
 	while (cstring_readline(line, in)) {
 		i++;
 
-		switch (fmt) {
-		case NSUB_FMT_LRC:
-			if (!nsub_read_lrc(song, line->string)) {
-				fprintf(stderr, "Read error on line %zu: <%s>\n", i,
-						line->string);
-				song = NULL;
-				goto fail;
-			}
-			break;
-		default:
-			fprintf(stderr, "Unsupported read format %d\n", fmt);
-			free_song(song);
+		if (!read_a_line(song, line->string)) {
+			fprintf(stderr, "Read error on line %zu: <%s>\n", i, line->string);
 			song = NULL;
 			goto fail;
 		}

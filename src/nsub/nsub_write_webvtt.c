@@ -41,13 +41,9 @@ int nsub_write_webvtt(FILE *out, song_t *song, NSUB_FORMAT fmt,
 	}
 
 	// metas
+	array_loop(song->metas, meta, meta_t)
 	{
-		size_t count = array_count(song->metas);
-		meta_t *meta;
-		for (size_t i = 0; i < count; i++) {
-			meta = (meta_t *) array_get(song->metas, i);
-			fprintf(out, "NOTE META %s: %s\n\n", meta->key, meta->value);
-		}
+		fprintf(out, "NOTE META %s: %s\n\n", meta->key, meta->value);
 	}
 
 	// offset is not supported in WebVTT (so, always applied)
@@ -62,13 +58,9 @@ int nsub_write_webvtt(FILE *out, song_t *song, NSUB_FORMAT fmt,
 	}
 
 	// lyrics
+	array_loop(song->lyrics, lyric, lyric_t)
 	{
-		size_t count = array_count(song->lyrics);
-		lyric_t *lyric;
-		for (size_t i = 0; i < count; i++) {
-			lyric = (lyric_t*) array_get(song->lyrics, i);
-			nsub_write_webvtt_lyric(out, lyric, offset);
-		}
+		nsub_write_webvtt_lyric(out, lyric, offset);
 	}
 
 	return 1;
