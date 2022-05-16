@@ -146,6 +146,40 @@ void song_add_meta(song_t *song, char *key, char *value);
 
 /* Read */
 
+/**
+ * Convert a text line into milliseconds (for instance, 00:00:17,400).
+ * Text <b>must</b> be conform, though less groups or less digits per group
+ * is allowed.
+ *
+ * @note maximum number of groups: 4,
+ * 		 maximum number of digits per
+ * 			group: 2 except decimal group which is allowed up to 3
+ *
+ * @param line the line to convert
+ * @param deci_sep the decimal separator symbol (usually '.' or ',')
+ * @param max_deci maximum number of digits for the decimal value (max is 3)
+ *
+ * @return the number of milliseconds it means
+ */
+int nsub_to_ms(const char line[], char deci_sym);
+
+/**
+ * Validate that the given line is a timing (for instance, 00:00:17,400).
+ * Text <b>must</b> be conform, though less groups or less digits per group
+ * is allowed.
+ *
+ * @note maximum number of groups: 4,
+ * 		 maximum number of digits per
+ * 			group: 2 except decimal group which is allowed up to 3
+ *
+ * @param line the line to check
+ * @param deci_sep the decimal separator symbol (usually '.' or ',')
+ * @param max_deci maximum number of digits for the decimal value
+ *
+ * @return TRUE if it is
+ */
+int nsub_is_timing(const char line[], char deci_sym, int max_deci);
+
 song_t *nsub_read(FILE *in, NSUB_FORMAT fmt);
 int nsub_read_lrc(song_t *song, char *line);
 int nsub_read_webvtt(song_t *song, char *line);

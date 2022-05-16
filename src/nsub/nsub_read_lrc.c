@@ -25,13 +25,13 @@
 /* Declarations */
 
 // test if this is an offset line
-int is_lrc_offset(char *line);
+static int is_lrc_offset(char *line);
 // test if it is a timed lyric
-int is_lrc_lyric(char *line, int*end);
+static int is_lrc_lyric(char *line, int*end);
 // test if this is a meta line
-int is_lrc_meta(char *line, int *colon, int *end);
+static int is_lrc_meta(char *line, int *colon, int *end);
 // count the ms in the line "[(00:0)0:14.80]" or "[offset: +0:12]"
-int lrc_millisec(char *line);
+static int lrc_millisec(char *line);
 
 /* Public */
 
@@ -106,48 +106,79 @@ int nsub_read_lrc(song_t *song, char *line) {
 
 /* Private */
 
-int is_lrc_offset(char *line) {
-	const char offset[] = { "[offset" };
-	int i = 0;
-	while (line[i] && offset[i] && line[i] == offset[i])
-		i++;
+static int is_lrc_offset(char *line) {
+	// [offset: +0:12]
 
-	if (!offset[i]) {
-		while (line[i] == ' ')
-			i++;
+	// skip spaces
+	while (*line == ' ')
+		line++;
 
-		if (line[i] == ':')
-			return 1;
+	// skip [offset
+	char *offset = { "[offset" };
+	while (*line && *offset && *offset == *line) {
+		line++;
+		offset++;
 	}
+	if (*offset)
+		return 0;
 
-	return 0;
+	// skip spaces then ':'
+	while (*line == ' ')
+		line++;
+	if (*line && *line != ':')
+		return 0;
+	line++;
+
+	// allow sign
+	if (*line == '-' || *line == '+')
+		line++;
+	while (*line == ' ')
+		line++;
+
+	// find end
+	int i = 0;
+	while (line[i] && line[i] != ']')
+		i++;
+	if (line[i] != ']')
+		return 0;
+
+	// validate timing
+	cstring_t*tmp = cstring_substring(line, 0, i);
+	int ok = nsub_is_timing(tmp->string, '.', 2);
+	free_cstring(tmp);
+	return ok;
 }
 
-int is_lrc_lyric(char *line, int *end) {
-	if (line[0] != '[')
-		return 0;
+static int is_lrc_lyric(char *line, int *end) {
+	// "[(00:0)0:14.80] bla bla bla"
 
 	*end = 0;
 
-	for (int i = 1; line[i]; i++) {
-		char car = line[i];
+	// skip spaces
+	while (*line == ' ')
+		line++;
 
-		if (car == ']') {
-			*end = i;
-			return i >= 2;
-		}
+	// skip [
+	if (*line != '[')
+		return 0;
+	line++;
 
-		int digit = (car >= '0' && car <= '9');
-		int sep = (car == ':' || car == '.' || car == ' ');
+	// find end
+	int i = 0;
+	while (line[i] && line[i] != ']')
+		i++;
+	if (line[i] != ']')
+		return 0;
+	*end = i;
 
-		if (!digit && !sep)
-			break;
-	}
-
-	return 0;
+	// validate timing
+	cstring_t*tmp = cstring_substring(line, 0, i);
+	int ok = nsub_is_timing(tmp->string, '.', 2);
+	free_cstring(tmp);
+	return ok;
 }
 
-int is_lrc_meta(char *line, int *colon, int *end) {
+static int is_lrc_meta(char *line, int *colon, int *end) {
 	if (line[0] != '[')
 		return 0;
 
@@ -169,63 +200,50 @@ int is_lrc_meta(char *line, int *colon, int *end) {
 	return (*colon) && (*end);
 }
 
-int lrc_millisec(char *line) {
-	int mults[] = { 1000, 10000, 60000, 600000, 3600000, 36000000 };
+static int lrc_millisec(char *line) {
+	// count the ms in the line "[(00:0)0:14.80]" or "[offset: +0:12]"
 
-	size_t end = 0;
-	for (size_t i = 0; line[i]; i++) {
-		if (line[i] == ']') {
-			end = i - 1;
-			break;
+	int sign = 1;
+	int dummy = 0;
+
+	// skip spaces
+	while (*line == ' ')
+		line++;
+
+	if (is_lrc_lyric(line, &dummy)) {
+		// skip [
+		line++;
+	} else if (is_lrc_offset(line)) {
+		// skip [offset:
+		while (*line != ':')
+			line++;
+		while (*line == ' ')
+			line++;
+
+		// allow sign
+		if (*line == '+') {
+			line++;
+		} else if (*line == '-') {
+			line++;
+			sign = -1;
 		}
+		while (*line == ' ')
+			line++;
+	} else {
+		/* should not happen! */
+		fprintf(stderr,
+				"Warning: called lrc_millisec with bad input [%s], ignoring...\n",
+				line);
+		return 0;
 	}
 
-	int total = 0;
-	for (size_t i = end; i >= 0; i--) {
-		char car = line[i];
+	// find end
+	int i = 0;
+	while (line[i] != ']')
+		i++;
 
-		int digit = (car >= '0' && car <= '9');
-		int sign = (car == '-' || car == '+');
-		int dot = car == '.';
-		int col = (car == ':');
-
-		if (!digit && !sign && !dot && !col) {
-			break;
-		}
-
-		if (dot) {
-			int mult = 1;
-
-			int j = i + 3;
-			while (j > end) {
-				mult *= 10;
-				j--;
-			}
-
-			for (; j > i; j--) {
-				total += mult * ((int) line[j] - (int) '0');
-				mult *= 10;
-			}
-
-			end = i - 1;
-			break;
-		}
-	}
-
-	int imult = 0;
-	for (size_t i = end; 1; i--) {
-		char car = line[i];
-		int digit = (car >= '0' && car <= '9');
-
-		if (digit)
-			total += (car - '0') * mults[imult++];
-
-		if (car == '-')
-			total = -total;
-
-		if (i == 0)
-			break;
-	}
-
-	return total;
+	cstring_t*tmp = cstring_substring(line, 0, i);
+	int ms = nsub_to_ms(tmp->string, '.');
+	free_cstring(tmp);
+	return sign * ms;
 }

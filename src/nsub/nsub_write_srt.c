@@ -20,6 +20,7 @@
 #include <stdio.h>
 
 #include "nsub.h"
+#include "utils/utils.h"
 
 /* Declarations */
 
@@ -64,12 +65,15 @@ void nsub_write_srt_lyric(FILE *out, lyric_t *lyric, int offset) {
 		return;
 	}
 
+	// Num is mandatory for srt
+	fprintf(out, "%d\n", lyric->num);
+
 	//if (lyric->name)
 	// not supported, ignored
 
 	char *start = nsub_srt_time_str(lyric->start + offset, 0);
 	char *stop = nsub_srt_time_str(lyric->stop + offset, 0);
-	fprintf(out, "%d\n%s --> %s\n%s\n\n", lyric->num, start, stop, lyric->text);
+	fprintf(out, "%s --> %s\n%s\n\n", start, stop, lyric->text);
 	free(start);
 	free(stop);
 }

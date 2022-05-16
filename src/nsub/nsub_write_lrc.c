@@ -20,6 +20,7 @@
 #include <stdio.h>
 
 #include "nsub.h"
+#include "utils/utils.h"
 
 /* Declarations */
 
@@ -88,17 +89,37 @@ void nsub_write_lrc_lyric(FILE *out, lyric_t *lyric, int offset) {
 	}
 
 	if (lyric->type == NSUB_COMMENT || lyric->type == NSUB_UNKNOWN) {
-		fprintf(out, "-- %s\n", lyric->text);
+		cstring_t *tmp = cstring_clone(lyric->text);
+		if (tmp) {
+			cstring_replace(tmp, "\n", "\\n");
+		}
+
+		fprintf(out, "-- %s\n", tmp->string);
 		lrc_last_stop = 0;
+
+		free_cstring(tmp);
 		return;
 	}
 
-	if (lyric->name)
-		fprintf(out, "-- %s\n", lyric->name);
+	if (lyric->name) {
+		cstring_t *tmp = cstring_clone(lyric->name);
+		if (tmp) {
+			cstring_replace(tmp, "\n", "\\n");
+		}
+
+		fprintf(out, "-- %s\n", tmp->string);
+
+		free_cstring(tmp);
+	}
 
 	char *time = nsub_lrc_time_str(lyric->start + offset, 0);
-	fprintf(out, "[%s] %s\n", time, lyric->text);
+	cstring_t *tmp = cstring_clone(lyric->text);
+	if (tmp) {
+		cstring_replace(tmp, "\n", "\\n");
+	}
+	fprintf(out, "[%s] %s\n", time, tmp->string);
 	free(time);
+	free_cstring(tmp);
 
 	lrc_last_stop = lyric->stop + offset;
 }

@@ -43,7 +43,8 @@ int nsub_write_webvtt(FILE *out, song_t *song, NSUB_FORMAT fmt,
 	// metas
 	array_loop(song->metas, meta, meta_t)
 	{
-		fprintf(out, "NOTE META %s: %s\n\n", meta->key, meta->value);
+		// Not always supported by clients, so disabled:
+		//fprintf(out, "NOTE META %s: %s\n\n", meta->key, meta->value);
 	}
 
 	// offset is not supported in WebVTT (so, always applied)
@@ -53,8 +54,9 @@ int nsub_write_webvtt(FILE *out, song_t *song, NSUB_FORMAT fmt,
 
 	// other metas
 	{
-		fprintf(out,
-				"NOTE META created by: nsub (https://github.com/nikiroo/nsub)]\n");
+		// Not always supported by clients, so disabled:
+		//fprintf(out,
+		// "NOTE META created by: nsub (https://github.com/nikiroo/nsub)]\n");
 	}
 
 	// lyrics
@@ -79,8 +81,12 @@ void nsub_write_webvtt_lyric(FILE *out, lyric_t *lyric, int offset) {
 		return;
 	}
 
-	if (lyric->name)
-		fprintf(out, "%s\n", lyric->name);
+	// Num is optional for WebVTT, but maybe easier for clients
+	fprintf(out, "%d\n", lyric->num);
+
+	// Not always supported by clients, so disabled:
+	// if (lyric->name)
+	//fprintf(out, "%s\n", lyric->name);
 
 	char *start = nsub_webvtt_time_str(lyric->start + offset, 0);
 	char *stop = nsub_webvtt_time_str(lyric->stop + offset, 0);

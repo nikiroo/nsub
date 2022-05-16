@@ -115,6 +115,9 @@ song_t *nsub_read(FILE *in, NSUB_FORMAT fmt) {
 	case NSUB_FMT_SRT:
 		read_a_line = nsub_read_srt;
 		break;
+	case NSUB_FMT_WEBVTT:
+		read_a_line = nsub_read_webvtt;
+		break;
 	default:
 		fprintf(stderr, "Unsupported read format %d\n", fmt);
 		goto fail;
@@ -152,4 +155,101 @@ int nsub_write(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset) {
 		fprintf(stderr, "Unsupported write format %d\n", fmt);
 		return 0;
 	}
+}
+
+int nsub_to_ms(const char line[], char deci_sym) {
+	// 00:00:17,400
+
+	/* should not happen! */
+	/* note: also, we assume max 3 decimal digits */
+	if (!nsub_is_timing(line, deci_sym, 3)) {
+		fprintf(stderr,
+				"Warning: called nsub_to_ms with bad input [%s], ignoring...\n",
+				line);
+		return 0;
+	}
+
+	int mults[] = { 1, 1000, 60000, 3600000 };
+
+	int group[4] = { 0, 0, 0, 0 };
+	int igroup = -1;
+
+	char mtmp[3] = { 1, 10, 100 };
+	int itmp = 0;
+
+	int has_milli = 0;
+
+	size_t end = strlen(line) - 1;
+
+	for (size_t i = end; i >= 0; i--) {
+		char car = line[i];
+
+		int digit = (car >= '0' && car <= '9');
+		int dot = car == deci_sym;
+		int col = (car == ':');
+
+		if (!digit && !dot && !col) {
+			break;
+		}
+
+		if (digit) {
+			if (itmp == 0)
+				igroup++;
+
+			group[igroup] += mtmp[itmp] * (car - (int) '0');
+			itmp++;
+		} else {
+			if (dot)
+				has_milli = 1;
+
+			itmp = 0;
+		}
+	}
+
+	int total = 0;
+	int multOffset = (has_milli ? 0 : 1);
+	for (int i = 0; i <= igroup; i++) {
+		total += mults[i + multOffset] * group[i];
+	}
+
+	return total;
+}
+
+int nsub_is_timing(const char line[], char deci_sym, int max_deci) {
+	// 00:00:14,800
+
+	int digits = 0;
+	int groups = 0;
+	int sep = 0;
+
+	int max_digits = 2;
+	int max_groups = 3;
+
+	for (char *ptr = (char *) line; *ptr; ptr++) {
+		int digit = (*ptr >= '0' && *ptr <= '9');
+		int col = (*ptr == ':');
+		int dot = *ptr == deci_sym;
+
+		if (digit) {
+			digits++;
+		} else if (col) {
+			digits = 0;
+			groups++;
+		} else if (dot) {
+			digits = 0;
+			max_digits = max_deci;
+			sep++;
+		} else {
+			return 0;
+		}
+
+		if (digits > max_digits)
+			return 0;
+		if (groups > max_groups)
+			return 0;
+		if (sep > 1)
+			return 0;
+	}
+
+	return 1;
 }
