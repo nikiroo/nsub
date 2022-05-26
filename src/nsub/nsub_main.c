@@ -36,6 +36,11 @@ int main(int argc, char **argv) {
 	char *out_file = NULL;
 	int apply_offset = 0;
 
+	if (argc <= 1) {
+		help(argv[0]);
+		return 5;
+	}
+
 	for (int i = 1; i < argc; i++) {
 		char *arg = argv[i];
 		if (!strcmp("--help", arg) || !strcmp("-h", arg)) {
@@ -62,8 +67,22 @@ int main(int argc, char **argv) {
 				fprintf(stderr, "Unsupported output format: %s\n", argv[i]);
 				return 9;
 			}
-		} else if (!strcmp("--apply-offset", arg) || !strcmp("-o", arg)) {
+		} else if (!strcmp("--apply-offset", arg) || !strcmp("-a", arg)) {
 			apply_offset = 1;
+		} else if (!strcmp("--output", arg) || !strcmp("-o", arg)) {
+			if (i + 1 >= argc) {
+				fprintf(stderr,
+						"The parameter --output/-o requires an argument\n");
+				return 5;
+			}
+			out_file = argv[++i];
+			if (to == NSUB_FMT_UNKNOWN) {
+				char *ext = strrchr(arg, '.');
+				if (ext) {
+					ext++;
+					to = nsub_parse_fmt(ext, 0);
+				}
+			}
 		} else if (!in_file) {
 			in_file = arg;
 			if (from == NSUB_FMT_UNKNOWN) {
@@ -160,14 +179,13 @@ NSUB_FORMAT nsub_parse_fmt(char *type, int required) {
 void help(char *program) {
 	printf("NSub subtitles conversion program\n");
 	printf("Syntax:\n");
-	printf(
-			"\t%s (--from FMT) (--to FMT) (--apply-offset) (IN_FILE (OUT_FILE))\n",
-			program);
+	printf("\t%s (--from FMT) (--to FMT) (--apply-offset)\n"
+			"\t\t (--output OUT_FILE) (IN_FILE)\n", program);
 	printf("\t> --help (or -h): this help message\n");
 	printf("\t> --from (or -f) FMT: select the input format FMT\n");
 	printf("\t> --to (or -t) FMT: select the output format FMT\n");
 	printf(
-			"\t> --apply-offset (or -o): apply the offset tag value to the lyrics\n");
+			"\t> --apply-offset (or -a): apply the offset tag value to the lyrics\n");
 	printf(
 			"\t> IN_FILE: the input file or '-' for stdin (which is the default)\n");
 	printf(

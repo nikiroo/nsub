@@ -7,8 +7,8 @@ Converti entre les formats Subtitle/Lyrics (webvtt/srt/lrc).
 ## Synopsis
 
 - `nsub --help`
-- `nsub` (`--from FMT`) (`--to FMT`) (`--apply-offset`) (`IN` (`OUT`))
-- `nsub` (`-f FMT`) (`-t FMT`) (`-o`) (`IN` (`OUT`))
+- `nsub` (`--from FMT`) (`--to FMT`) (`--apply-offset`) (--output `OUT`) (`IN`)
+- `nsub` (`-f FMT`) (`-t FMT`) (`-a`) (`-o OUT`) (`IN`)
 
 ## Description
 
@@ -27,12 +27,12 @@ Il ne nécessite pas de librairies externes.
 
 ## Options
 
-- **--help** (or **-h**) : information sur la syntaxe du programme
-- **--from** (or **-f**) **FMT** : choisi le format d'entrée
-- **--to** (or **-t**) **FMT** : choisi le format de sortie
-- **--apply-offset** (or **-o**) : applique l'offset interne au fichier dans les calcul de temps des paroles
+- **--help** (ou **-h**) : information sur la syntaxe du programme
+- **--from** (ou **-f**) **FMT** : choisi le format d'entrée
+- **--to** (ou **-t**) **FMT** : choisi le format de sortie
+- **--apply-offset** (ou **-a**) : applique l'offset interne au fichier dans les calcul de temps des paroles
+- **--output** (ou **-o**) **OUT**: le fichier destination ou '-' pour stdout (défaut)
 - **IN** : le fichier source ou '-' pour stdin (défaut)
-- **OUT** : le fichier destination ou '-' pour stdout (défaut)
 
 Note : les formats in/out seront devinés en fonction de l'extension si nécessaire/possible
 Note : pour spécifier un fichier appelé tiret (-), préfixez-le avec un chemin (ex : './-')

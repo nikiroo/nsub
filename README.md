@@ -7,8 +7,8 @@ Converts between Subtitle/Lyrics formats (webvtt/srt/lrc).
 ## Synopsis
 
 - `nsub --help`
-- `nsub` (`--from FMT`) (`--to FMT`) (`--apply-offset`) (`IN` (`OUT`))
-- `nsub` (`-f FMT`) (`-t FMT`) (`-o`) (`IN` (`OUT`))
+- `nsub` (`--from FMT`) (`--to FMT`) (`--apply-offset`) (--output `OUT`) (`IN`)
+- `nsub` (`-f FMT`) (`-t FMT`) (`-a`) (`-o OUT`) (`IN`)
 
 ## Description
 
@@ -30,9 +30,9 @@ It does not require external libraries.
 - **--help** (or **-h**): information about the syntax
 - **--from** (or **-f**) **FMT**: select the input format FMT
 - **--to** (or **-t**) **FMT**: select the output format FMT
-- **--apply-offset** (or **-o**): apply the offset tag value to the lyrics
+- **--apply-offset** (or **-a**): apply the offset tag value to the lyrics
+- **--output** (or **-o**) **OUT**: the output file or '-' for stdout (which is the default)
 - **IN**: the input file or '-' for stdin (which is the default)
-- **OUT**: the output file or '-' for stdout (which is the default)
 
 Note: the in/out formats will be guessed from the extension if needed/possible
 Note: to specify a file named dash (-), prefix it with a path (e.g., './-')
