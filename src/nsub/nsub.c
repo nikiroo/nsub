@@ -102,6 +102,14 @@ void song_add_meta(song_t *song, char *key, char *value) {
 	meta->value = value ? strdup(value) : NULL;
 }
 
+void uninit_lyric(lyric_t *lyric) {
+	if (!lyric)
+		return;
+
+	free(lyric->name);
+	free(lyric->text);
+}
+
 song_t *nsub_read(FILE *in, NSUB_FORMAT fmt) {
 	song_t *song = NULL;
 	cstring_t *line = NULL;

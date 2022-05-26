@@ -134,7 +134,7 @@ typedef struct {
 	char *lang;
 } song_t;
 
-/* Song */
+/* Song & Lyric */
 
 song_t *new_song();
 void free_song(song_t *song);
@@ -143,6 +143,7 @@ void song_add_empty(song_t *song);
 void song_add_comment(song_t *song, char *comment);
 void song_add_lyric(song_t *song, int start, int stop, char *name, char *text);
 void song_add_meta(song_t *song, char *key, char *value);
+void uninit_lyric(lyric_t *lyric);
 
 /* Read */
 
