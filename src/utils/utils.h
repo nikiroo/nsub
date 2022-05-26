@@ -57,13 +57,14 @@ size_t strnlen(const char *s, size_t maxlen);
 #endif
 #if _POSIX_C_SOURCE < 200809L && _XOPEN_SOURCE < 500
 /**
- * The strndup() function is similar, but copies at most n bytes.
- * If s is longer than n, only n bytes are copied, and a terminating null byte
- * ('\0') is added.
+ * The strdup() function returns a pointer to a new string which is a
+ * duplicate of the string s.  Memory for the new string is obtained with
+ * malloc(3), and can be freed with free(3).
  *
- * @return On success, the strndup() function returns a pointer to the
- * 		duplicated string.  It returns NULL if insufficient memory was
- * 		available, with errno set to indicate the error
+ *
+ * @return On success, the strdup() function returns a pointer to the duplicated
+ *     string.  It returns NULL if insufficient memory was available, with
+ *     errno set to indicate the error.
  */
 char *strdup(const char *source);
 #endif

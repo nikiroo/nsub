@@ -30,7 +30,8 @@ typedef struct {
 	void *data;
 } priv_t;
 
-/* make sure we have at least n elements in the buffer, grow if needed */
+/* make sure we have at least n+1 elements in the buffer, grow if needed */
+/* +1 is so we can always end with a NULL value for array_data/convert() */
 static int array_assure(array_t *me, size_t nb_elem);
 
 /* for qsort operations */
@@ -105,7 +106,7 @@ void array_clear(array_t *me) {
 // convert to void * data (free the rest)
 void *array_convert(array_t *me) {
 	priv_t *priv = (priv_t *) me->priv;
-	void *data = priv->data;
+	void *data = array_data(me);
 	free(priv);
 	free(me);
 	return data;
@@ -113,6 +114,18 @@ void *array_convert(array_t *me) {
 
 void *array_data(array_t *me) {
 	priv_t *priv = (priv_t *) me->priv;
+
+	// Note: this should be impossible
+	if (me->count >= priv->buffer)
+		array_assure(me, me->count + 1);
+
+	// cast to (char *) because we want 'byte' arithmetic
+	void *after_end = (void *) (((char *) priv->data)
+			+ (me->count * priv->elem_size));
+
+	// last item is always NULL
+	memset(after_end, '\0', priv->elem_size);
+
 	return priv->data;
 }
 
@@ -133,8 +146,37 @@ void *array_newn(array_t *me, size_t how_many) {
 }
 
 void *array_first(array_t *me) {
+	if (!me->count)
+		return NULL;
+
 	priv_t *priv = (priv_t *) me->priv;
 	return priv->data;
+}
+
+void *array_last(array_t *me) {
+	if (!me->count)
+		return NULL;
+
+	priv_t *priv = (priv_t *) me->priv;
+	// cast to (char *) because we want 'byte' arithmetic
+	return (void *) (((char *) priv->data) + ((me->count - 1) * priv->elem_size));
+}
+
+void *array_prev(array_t *me, void *ptr) {
+	priv_t *priv = (priv_t *) me->priv;
+
+	// cast to (char *) because we want 'byte' arithmetic
+	char *cptr = (char *) ptr;
+	char *cdata = (char*) priv->data;
+
+	if (cptr) {
+		cptr -= priv->elem_size;
+		if (cptr >= cdata) {
+			return cptr;
+		}
+	}
+
+	return NULL;
 }
 
 void *array_next(array_t *me, void *ptr) {
@@ -323,7 +365,7 @@ int array_setn(array_t *me, size_t i, void *data, size_t n) {
 static int array_assure(array_t *me, size_t nb_elem) {
 	priv_t *priv = (priv_t *) me->priv;
 
-	if (priv->buffer < nb_elem) {
+	if (priv->buffer <= nb_elem) {
 		priv->buffer *= 2;
 		if (priv->buffer < nb_elem) {
 			priv->buffer = nb_elem;

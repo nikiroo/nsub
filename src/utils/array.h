@@ -143,7 +143,7 @@ typedef struct {
 array_t *new_array(size_t elem_size, size_t initial);
 
 /**
- * Create a new array.
+ * Initialise a new array.
  *
  * @param elem_size the size of one element
  * @param initial the initial number of items the buffer can hold (<b>not</b> 0)
@@ -177,11 +177,16 @@ void uninit_array(array_t *me);
 
 /**
  * Clear the array, that is, resets its current size to 0 (buffer unchanged).
+ *
+ * @note if you hold custom structures with owned resources in the array, you
+ * should deallocate them properly before
  */
 void array_clear(array_t *me);
 
 /** 
  * Convert the array to a block of memory where all values are adjacent.
+ *
+ * @note an extra NULL value is assured to be present as last element
  *
  * @return the data (you must later call `free()` on it)
  */
@@ -193,6 +198,8 @@ void *array_convert(array_t *me);
  * but the array is still valid.
  *
  * Be careful if you change the content (you should not).
+ *
+ * @note an extra NULL value is assured to be present as last element
  *
  * @return the internal storage area
  */
@@ -227,9 +234,29 @@ void *array_newn(array_t *me, size_t n);
  * store integers, it will be <tt>(int *)</tt>; if you store strings, it will
  * be <tt>char **</tt>).
  *
- * @return a <i>pointer</i> to the first element
+ * @return a <i>pointer</i> to the first element, or NULL if no elements are
+ * 		present
  */
 void *array_first(array_t *me);
+
+/**
+ * Return a pointer to the last element of the array (for instance, if you
+ * store integers, it will be <tt>(int *)</tt>; if you store strings, it will
+ * be <tt>char **</tt>).
+ *
+ * @return a <i>pointer</i> to the last element, or NULL if no elements are
+ * 		present
+ */
+void *array_last(array_t *me);
+
+/**
+ * Return the pointer to the previous element, or NULL if it was the first.
+ *
+ * @param ptr a pointer from an array (the array must be valid)
+ *
+ * @return the previous element, or NULL
+ */
+void *array_prev(array_t *me, void *ptr);
 
 /**
  * Return the pointer to the next element, or NULL if it was the last.
@@ -245,6 +272,8 @@ void *array_next(array_t *me, void *ptr);
  * The address of the item will be returned.
  *
  * @param i the index of the element to retrieve
+ *
+ * @note if the index is out of bounds, you will get invalid data
  *
  * @return the pointer to the i'th element
  */
@@ -270,6 +299,15 @@ void *array_pop(array_t *me);
 /**
  * Cut the array at the given size and return a pointer to the first element
  * that was removed if any.
+ *
+ * @note be careful, the memory pointed to by the element(s) will be reused the
+ * 		next time we add an element -- you should not use it after this; in
+ * 		short, the return value is mainly so you can call <tt>free</tt> on
+ * 		value(s) pointed to by this pointer (<b>not</b> the pointer itself) if
+ * 		it is a pointer to memory you own, or use it locally before continuing
+ * 		to use the array
+ * @note in case this was not clear, do <b>not</b> call <tt>free</tt> on the
+ * 		returned value(s)
  *
  * @return a pointer to the first removed element, or NULL
  */
@@ -335,7 +373,8 @@ void array_qsortl(array_t *me, int rev);
 void array_qsortf(array_t *me, int rev);
 
 /**
- * Add an element to the array.
+ * Add an element to the array (will create a new item in the array and copy the
+ * data from the given element in it).
  *
  * @param data the memory position of the element to add
  *
@@ -345,7 +384,8 @@ void array_qsortf(array_t *me, int rev);
 int array_push(array_t *me, void *data);
 
 /**
- * Add multiple elements to the array.
+ * Add multiple elements to the array (will create new items in the array and
+ * copy the data from the given elements in them).
  *
  * @param data the memory position of the elements to add, adjacent to each
  *  other
@@ -382,7 +422,9 @@ int array_copyn(array_t *me, void *target, size_t i, size_t n);
 
 /**
  * Set an element of the array to the given value.
- * Can also append a new elements.
+ * Can also append an element at the end of the array (i.e., <tt>i</tt> can be
+ * the size of the array and this will result in an array with one more
+ * element).
  * Memory will be copied from the given data to the array.
  *
  * @param i the element index
@@ -398,7 +440,9 @@ int array_set(array_t *me, size_t i, void *data);
 
 /**
  * Set elements of the array to the given value.
- * Can also append some of them to the array if no values were present.
+ * Can also append elements at the end of the array (i.e., <tt>i</tt> can be
+ * the size of the array and this will result in an array with <tt>n</tt> more
+ * elements).
  * Memory will be copied from the given data to the array.
  *
  * @param i the element index to start the insertion at

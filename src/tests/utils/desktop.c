@@ -33,11 +33,6 @@ static void teardown() {
 	free_desktop(d);
 }
 
-static void reset() {
-	teardown();
-	setup();
-}
-
 START(init)
 		if (!d)
 			FAIL("new_desktop returned NULL");
