@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
 			}
 			out_file = argv[++i];
 			if (to == NSUB_FMT_UNKNOWN) {
-				char *ext = strrchr(arg, '.');
+				char *ext = strrchr(argv[i], '.');
 				if (ext) {
 					ext++;
 					to = nsub_parse_fmt(ext, 0);
