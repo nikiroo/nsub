@@ -128,6 +128,13 @@ song_t *nsub_read(FILE *in, NSUB_FORMAT fmt) {
 	line = new_cstring();
 	size_t i = 0;
 	while (cstring_readline(line, in)) {
+		// UTF-8 BOM detection if any
+		if (!i && cstring_starts_with(line->string, "\xEF\xBB\xBF", 0)) {
+			cstring_t *tmp = cstring_substring(line->string, 3, 0);
+			free_cstring(line);
+			line = tmp;
+		}
+
 		i++;
 
 		if (!read_a_line(song, line->string)) {
