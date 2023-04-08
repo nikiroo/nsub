@@ -95,7 +95,7 @@ int init_desktop(desktop_t *me, const char filename[], int best_size) {
 			me->icon_file = desktop_find_icon("folder", best_size);
 		}
 
-		me->children = new_array(sizeof(desktop_t*), 32);
+		me->children = new_array(sizeof(desktop_t), 32);
 		for (struct dirent *ep = readdir(dp); ep; ep = readdir(dp)) {
 			if (!strcmp(ep->d_name, "."))
 				continue;
@@ -118,7 +118,7 @@ int init_desktop(desktop_t *me, const char filename[], int best_size) {
 
 	// Only process ".desktop" files
 	if (!ext || strcmp(ext, EXT)) {
-		free_desktop(me);
+		uninit_desktop(me);
 		free(ext);
 		return 0;
 	}
@@ -207,9 +207,10 @@ desktop_t *desktop_find_id(array_t *children, int id) {
 			break;
 		}
 
-		found = desktop_find_id(child->children, id);
-		if (found)
+		if (child->children) {
+			found = desktop_find_id(child->children, id);
 			break;
+		}
 	}
 
 	return found;
@@ -218,8 +219,8 @@ desktop_t *desktop_find_id(array_t *children, int id) {
 /* Private functions */
 
 static int desktop_compare(const void *a, const void* b) {
-	desktop_t *me1 = ((desktop_t**) a)[0];
-	desktop_t *me2 = ((desktop_t**) b)[0];
+	desktop_t *me1 = (desktop_t *)a;
+	desktop_t *me2 = (desktop_t *)b;
 
 	if (me1->children && !(me2->children))
 		return -1;
