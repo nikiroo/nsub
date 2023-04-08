@@ -22,14 +22,17 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <signal.h>
 
 #ifndef WIN32
-    #include <fcntl.h>
+	#include <fcntl.h>
+	#include <netdb.h>
+#else
+	#include <ws2tcpip.h>
 #endif
 
 #include "net.h"
-#include "cstring.h"
 
 #define bool int
 #define true 1
@@ -105,17 +108,15 @@ int net_connect(const char server[], int port) {
 	int sockfd;
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
-	cstring_t *str;
+	char string[10];
 
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
 	// convert the port number to a string
-	str = new_cstring();
-	cstring_addp(str, "%i", port);
-	rv = getaddrinfo(server, str->string, &hints, &servinfo);
-	free_cstring(str);
+	sprintf(string, "%i\0", port);
+	rv = getaddrinfo(server, string, &hints, &servinfo);
 	//
 
 	if (rv != 0) {
@@ -167,7 +168,7 @@ int net_listen(int port, int backlog) {
 	struct addrinfo hints, *servinfo, *p;
 	char yes = 1;
 	int rv;
-	cstring_t *str;
+	char string[10];
 
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_UNSPEC;
@@ -175,10 +176,8 @@ int net_listen(int port, int backlog) {
 	hints.ai_flags = AI_PASSIVE; // use my IP
 
 	// convert the port number to a string
-	str = new_cstring();
-	cstring_addp(str, "%d", port);
-	rv = getaddrinfo(NULL, str->string, &hints, &servinfo);
-	free_cstring(str);
+	sprintf(string, "%i\0", port);
+	rv = getaddrinfo(NULL, string, &hints, &servinfo);
 	//
 
 	if (rv != 0) {
