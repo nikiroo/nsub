@@ -617,8 +617,8 @@ void cstring_change_case(cstring_t *self, int up) {
 	free_cstring(rep);
 }
 
+static char buffer[BUFFER_SIZE];
 int cstring_readline(cstring_t *self, FILE *file) {
-	char buffer[BUFFER_SIZE];
 	size_t size = 0;
 	int full_line;
 
