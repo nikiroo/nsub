@@ -1,71 +1,95 @@
-NAME=nsub
+#
+# Simple makefile that will forward all commands to src/xxx
+# > NAME: main program (for 'man' and 'run')
+# > NAMES: list of all the programs to compile
+# > TESTS: list of all test programs to compile and run
+#
+NAME   = nsub
+NAMES  = $(NAME) cutils
+TESTS  = 
 
-.PHONY: all build rebuild install uninstall clean mrpropre mrpropre love debug \
-	doc man run tests test run-test run-test-more
+PREFIX = /usr/local
+dstdir = bin
+
+.PHONY: all build run clean mrpropre mrpropre love debug doc man \
+	test run-test run-test-more \
+	mess-build mess-run mess-clean mess-propre mess-doc mess-man \
+	mess-test mess-run-test mess-run-test-more \
+	$(NAMES) $(TESTS)
 
 all: build
 
-build: bin/nsub
-	@echo Build successful.
+build: mess-build $(NAMES)
 
-run: bin/nsub
-	bin/nsub
-	
-tests: test
+test: mess-test $(TESTS)
 
-test:
-	$(MAKE) -C src -f tests.d
-	
-run-test:
-	$(MAKE) -C src -f tests.d run
+# Main buildables
+M_OPTS=$(MAKECMDGOALS) --no-print-directory PREFIX=$(PREFIX) DEBUG=$(DEBUG)
+$(NAMES) $(TESTS):
+	$(MAKE) -C src/$@ $(M_OPTS) 
 
-run-test-more:
-	$(MAKE) -C src -f tests.d run-more
+# Manual
+man: mess-man
+	@$(MAKE) -f man.d $(MAKECMDGOALS) NAME=$(NAME)
 
-rebuild: clean build
+# Run
+run: mess-run $(NAME)
 
-doc:
+# Run main test
+run-test: mess-run-test $(TESTS)
+run-test-more: mess-run-test-more $(TESTS)
+
+# Doc/man/misc
+doc: mess-doc
 	doxygen
-
-man: VERSION README*.md
-	$(MAKE) -f man.d NAME=$(NAME)
-
 love:
 	@echo " ...not war."
-
 debug:
-	$(MAKE) DEBUG=1
+	$(MAKE) $(MAKECMDGOALS) PREFIX=$(PREFIX) NAME=$(NAME) DEBUG=1
 
+# Clean
+clean: mess-clean $(TESTS) $(NAMES)
 mrproper: mrpropre
-
-mrpropre: clean
-	$(MAKE) -C src -f tests.d mrpropre
-	$(MAKE) -C src -f utils.d mrpropre
-	$(MAKE) -C src -f nsub.d  mrpropre
-	rm -f man/man1/*.1 man/*/man1/*.1
-	rmdir man/*/man1 man/* man || true 
+mrpropre: mess-propre $(TESTS) $(NAMES) man
 	rm -rf doc/html doc/latex doc/man
-	rmdir doc || true
+	rmdir doc 2>/dev/null || true
 
-clean:
-	$(MAKE) -C src -f tests.d clean
-	$(MAKE) -C src -f utils.d clean
-	$(MAKE) -C src -f nsub.d  clean
+# Install/uninstall
+install: mess-install $(NAMES) man
+uninstall: mess-uninstall $(NAMES) man
 
-install:
-	$(MAKE) -C src -f nsub.d install
-	@if [ -e "man/man1/$(NAME).1" ]; then \
-		cp -r man/ "$(PREFIX)"/share/; \
-	else \
-		echo "No manual has been built (see \`make man')"; \
-	fi
-
-uninstall:
-	$(MAKE) -C src -f nsub.d uninstall
-
-bin/nsub: bin/utils.o
-	$(MAKE) -C src -f nsub.d DEBUG=$(DEBUG)
-
-bin/utils.o:
-	$(MAKE) -C src -f utils.d DEBUG=$(DEBUG)
+# Messages
+mess-build:
+	@echo
+	@echo ">>>>>>>>>> Building $(NAMES)..."
+mess-run:
+	@echo
+	@echo ">>>>>>>>>> Running $(NAME)..."
+mess-clean:
+	@echo
+	@echo ">>>>>>>>>> Cleaning $(NAMES) $(TESTS)..."
+mess-propre:
+	@echo
+	@echo ">>>>>>>>>> Calling Mr Propre..."
+mess-doc:
+	@echo
+	@echo ">>>>>>>>>> Generating documentation for $(NAME)..."
+mess-man:
+	@echo
+	@echo ">>>>>>>>>> Manual of $(NAME): $(MAKECMDGOALS)..."
+mess-test:
+	@echo
+	@echo ">>>>>>>>>> Building all tests: $(TESTS)..."
+mess-run-test:
+	@echo
+	@echo ">>>>>>>>>> Running tests: $(TESTS)..."
+mess-run-test-more:
+	@echo
+	@echo ">>>>>>>>>> Running more tests: $(TESTS)..."
+mess-install:
+	@echo
+	@echo ">>>>>>>>>> Installing $(NAME) into $(PREFIX)..."
+mess-uninstall:
+	@echo
+	@echo ">>>>>>>>>> Uninstalling $(NAME) from $(PREFIX)..."
 

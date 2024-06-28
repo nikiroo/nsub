@@ -20,7 +20,7 @@
 /**
  * @file nsub.h
  * @author Niki
- * @date 2022
+ * @date 2024
  *
  * @brief Subtitle/Lyrics conversion program (webvtt/srt/lrc)
  *
@@ -38,7 +38,7 @@
  *
  * @note all timings are in milliseconds.
  */
-#include "utils/array.h"
+#include "cutils/array.h"
 
 /**
  * A subtitle or lyric format to import from/export to.
