@@ -8,6 +8,7 @@ NAME   = nsub
 NAMES  = $(NAME) cutils
 TESTS  = 
 
+# You may override these when calling make
 PREFIX = /usr/local
 dstdir = bin
 
@@ -24,7 +25,8 @@ build: mess-build $(NAMES)
 test: mess-test $(TESTS)
 
 # Main buildables
-M_OPTS=$(MAKECMDGOALS) --no-print-directory PREFIX=$(PREFIX) DEBUG=$(DEBUG)
+M_OPTS=$(MAKECMDGOALS) --no-print-directory \
+	PREFIX=$(PREFIX) DEBUG=$(DEBUG) dstdir=$(abspath $(dstdir))
 $(NAMES) $(TESTS):
 	$(MAKE) -C src/$@ $(M_OPTS) 
 
@@ -61,7 +63,7 @@ uninstall: mess-uninstall $(NAMES) man
 # Messages
 mess-build:
 	@echo
-	@echo ">>>>>>>>>> Building $(NAMES)..."
+	@echo ">>>>>>>>>> Building $(NAMES) in $(dstdir)..."
 mess-run:
 	@echo
 	@echo ">>>>>>>>>> Running $(NAME)..."
@@ -79,7 +81,7 @@ mess-man:
 	@echo ">>>>>>>>>> Manual of $(NAME): $(MAKECMDGOALS)..."
 mess-test:
 	@echo
-	@echo ">>>>>>>>>> Building all tests: $(TESTS)..."
+	@echo ">>>>>>>>>> Building all tests in $(dstdir): $(TESTS)..."
 mess-run-test:
 	@echo
 	@echo ">>>>>>>>>> Running tests: $(TESTS)..."

@@ -1,12 +1,14 @@
 # Note: 99+ required for for-loop initial declaration (CentOS 6)
-# Note: gnu99 (instead of c99) required for libcutils-net
 
 NAME   = nsub
 NAMES  = $(NAME)
 srcdir = $(NAME)
-dstdir = ../bin
 
-CFLAGS   += -Wall -pedantic -I./ -std=gnu99
+ifeq ($(dstdir),)
+dstdir = $(srcdir)/bin
+endif
+
+CFLAGS   += -Wall -pedantic -I./ -std=c99
 CXXFLAGS += -Wall -pedantic -I./
 # LDFLAGS  += -lcheck
 PREFIX   =  /usr/local
@@ -17,10 +19,9 @@ CXXFLAGS += -ggdb -O0
 endif
 
 .PHONY: all build install uninstall clean mrpropre mrpropre \
-	$(NAMES)
+	$(NAMES) deps test run run-test run-test-more
 
 SOURCES=$(wildcard $(srcdir)/*.c)
-HEADERS=$(wildcard $(srcdir)/*.h)
 OBJECTS=$(SOURCES:%.c=%.o)
 
 # Main targets
@@ -29,40 +30,53 @@ all: build
 
 build: $(NAMES)
 
-nsub: $(dstdir)/nsub
+$(NAME): deps $(dstdir)/$(NAME)
 
+# Program, so no test
 run:
-	$(dstdir)/nsub --help
+	@echo
+	$(dstdir)/$(NAME) --help
+test run-test run-test-more:
+	@echo you are in the sources of the program, look at the tests instead
 
 ################
 # Dependencies #
 ################
-OBJECTS+=$(dstdir)/libcutils.o
-$(dstdir)/libcutils.o:
+## Libs (if needed)
+deps:
 	$(MAKE) --no-print-directory -C cutils/ cutils
+DEPS=$(dstdir)/libcutils.o
+
+## Headers
+DEPENDS=$(SOURCES:%.c=%.d)
+-include $(DEPENDS)
+%.o: %.c
+	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
 ################
 
-$(dstdir)/nsub: $(OBJECTS)
+$(dstdir)/$(NAME): $(DEPS) $(OBJECTS)
 	mkdir -p $(dstdir)
-	$(CC) $(OBJECTS) -o $@
+	# note: -r = --relocatable, but former also works with Clang
+	$(CC) $(CFLAGS) $(LDFLAGS) $(DEPS) $(OBJECTS) -o $@
 
 debug: 
 	$(MAKE) -f $(srcdir)/makefile.d DEBUG=1
 
 clean:
-	rm -f $(srcdir)/*.o
+	rm -f $(OBJECTS)
+	rm -f $(DEPENDS)
+	rm -f $(DEPS)
 
 mrproper: mrpropre
-
 mrpropre: clean
-	rm -f $(dstdir)/nsub
+	rm -f $(dstdir)/$(NAME)
 	rmdir $(dstdir) 2>/dev/null || true
 
-install: 
+install: build
 	mkdir -p "$(PREFIX)/bin"
-	cp $(dstdir)/nsub "$(PREFIX)/bin/"
+	cp "$(dstdir)/$(NAME)" "$(PREFIX)/bin/"
 
-uninstall:
-	rm "$(PREFIX)/bin/nsub"
+uninstall: build
+	rm "$(PREFIX)/bin/$(NAME)"
 	rmdir "$(PREFIX)/bin" 2>/dev/null
 
