@@ -1,3 +1,4 @@
 [submodule "src/cutils"]
 	path = src/cutils
 	url = git@git.nikiroo.be:workspace/cutils.git
+	branch = subtree
