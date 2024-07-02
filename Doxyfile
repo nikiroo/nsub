@@ -1,5 +1,14 @@
 # Doxyfile 1.8.13
 
+# Minimum required fields:
+PROJECT_NAME           = "NSub"
+PROJECT_BRIEF          = "Subtitle/lyrics conversion tool"
+INPUT                  = src/nsub
+STRIP_FROM_PATH        = src
+OPTIMIZE_OUTPUT_FOR_C  = YES
+OPTIMIZE_OUTPUT_JAVA   = NO
+FILE_PATTERNS          = *.h
+
 # This file describes the settings to be used by the documentation system
 # doxygen (www.doxygen.org) for a project.
 #
@@ -32,22 +41,25 @@
 # title of most generated pages and in a few other places.
 # The default value is: My Project.
 #
-
-PROJECT_NAME           = "NSub"
+#
+#PROJECT_NAME           = "My Project"
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. This
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 #
 
-PROJECT_NUMBER         = 1.0
+# Please do not use, or do not call with make file (it will automatically
+# add the version number from ./VERSION)
+#
+#PROJECT_NUMBER         = 1.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
 # quick idea about the purpose of the project. Keep the description short.
 #
 
-PROJECT_BRIEF          = "Small C utilities and subtitle/lyrics conversion"
+#PROJECT_BRIEF          = "Small description"
 
 # With the PROJECT_LOGO tag one can specify a logo or an icon that is included
 # in the documentation. The maximum height of the logo should not exceed 55
@@ -168,8 +180,6 @@ OUTPUT_DIRECTORY       = doc
 #
 #STRIP_FROM_PATH        = 
 
-STRIP_FROM_PATH        = src
-
 # The STRIP_FROM_INC_PATH tag can be used to strip a user-defined part of the
 # path mentioned in the documentation of a class, which tells the reader which
 # header file to include in order to use a class. If left blank only the name of
@@ -261,8 +271,6 @@ JAVADOC_AUTOBRIEF      = YES
 # The default value is: NO.
 #
 #OPTIMIZE_OUTPUT_FOR_C  = NO
-
-OPTIMIZE_OUTPUT_FOR_C  = YES
 
 # Set the OPTIMIZE_OUTPUT_JAVA tag to YES if your project consists of Java or
 # Python sources only. Doxygen will then generate output that is more tailored
@@ -566,29 +574,29 @@ OPTIMIZE_OUTPUT_FOR_C  = YES
 # If the FORCE_LOCAL_INCLUDES tag is set to YES then doxygen will list include
 # files with double quotes in the documentation rather than with sharp brackets.
 # The default value is: NO.
-
-FORCE_LOCAL_INCLUDES   = NO
+#
+#FORCE_LOCAL_INCLUDES   = NO
 
 # If the INLINE_INFO tag is set to YES then a tag [inline] is inserted in the
 # documentation for inline members.
 # The default value is: YES.
-
-INLINE_INFO            = YES
+#
+#INLINE_INFO            = YES
 
 # If the SORT_MEMBER_DOCS tag is set to YES then doxygen will sort the
 # (detailed) documentation of file and class members alphabetically by member
 # name. If set to NO, the members will appear in declaration order.
 # The default value is: YES.
-
-SORT_MEMBER_DOCS       = YES
+#
+#SORT_MEMBER_DOCS       = YES
 
 # If the SORT_BRIEF_DOCS tag is set to YES then doxygen will sort the brief
 # descriptions of file, namespace and class members alphabetically by member
 # name. If set to NO, the members will appear in declaration order. Note that
 # this will also influence the order of the classes in the class list.
 # The default value is: NO.
-
-SORT_BRIEF_DOCS        = NO
+#
+#SORT_BRIEF_DOCS        = NO
 
 # If the SORT_MEMBERS_CTORS_1ST tag is set to YES then doxygen will sort the
 # (brief and detailed) documentation of class members so that constructors and
@@ -599,15 +607,15 @@ SORT_BRIEF_DOCS        = NO
 # Note: If SORT_MEMBER_DOCS is set to NO this option is ignored for sorting
 # detailed member documentation.
 # The default value is: NO.
-
-SORT_MEMBERS_CTORS_1ST = NO
+#
+#SORT_MEMBERS_CTORS_1ST = NO
 
 # If the SORT_GROUP_NAMES tag is set to YES then doxygen will sort the hierarchy
 # of group names into alphabetical order. If set to NO the group names will
 # appear in their defined order.
 # The default value is: NO.
-
-SORT_GROUP_NAMES       = NO
+#
+#SORT_GROUP_NAMES       = NO
 
 # If the SORT_BY_SCOPE_NAME tag is set to YES, the class list will be sorted by
 # fully-qualified names, including namespaces. If set to NO, the class list will
@@ -616,8 +624,8 @@ SORT_GROUP_NAMES       = NO
 # Note: This option applies only to the class list, not to the alphabetical
 # list.
 # The default value is: NO.
-
-SORT_BY_SCOPE_NAME     = NO
+#
+#SORT_BY_SCOPE_NAME     = NO
 
 # If the STRICT_PROTO_MATCHING option is enabled and doxygen fails to do proper
 # type resolution of all parameters of a function it will reject a match between
@@ -626,39 +634,39 @@ SORT_BY_SCOPE_NAME     = NO
 # simple string match. By disabling STRICT_PROTO_MATCHING doxygen will still
 # accept a match between prototype and implementation in such cases.
 # The default value is: NO.
-
-STRICT_PROTO_MATCHING  = NO
+#
+#STRICT_PROTO_MATCHING  = NO
 
 # The GENERATE_TODOLIST tag can be used to enable (YES) or disable (NO) the todo
 # list. This list is created by putting \todo commands in the documentation.
 # The default value is: YES.
-
-GENERATE_TODOLIST      = YES
+#
+#GENERATE_TODOLIST      = YES
 
 # The GENERATE_TESTLIST tag can be used to enable (YES) or disable (NO) the test
 # list. This list is created by putting \test commands in the documentation.
 # The default value is: YES.
-
-GENERATE_TESTLIST      = YES
+#
+#GENERATE_TESTLIST      = YES
 
 # The GENERATE_BUGLIST tag can be used to enable (YES) or disable (NO) the bug
 # list. This list is created by putting \bug commands in the documentation.
 # The default value is: YES.
-
-GENERATE_BUGLIST       = YES
+#
+#GENERATE_BUGLIST       = YES
 
 # The GENERATE_DEPRECATEDLIST tag can be used to enable (YES) or disable (NO)
 # the deprecated list. This list is created by putting \deprecated commands in
 # the documentation.
 # The default value is: YES.
-
-GENERATE_DEPRECATEDLIST= YES
+#
+#GENERATE_DEPRECATEDLIST= YES
 
 # The ENABLED_SECTIONS tag can be used to enable conditional documentation
 # sections, marked by \if <section_label> ... \endif and \cond <section_label>
 # ... \endcond blocks.
-
-ENABLED_SECTIONS       = 
+#
+#ENABLED_SECTIONS       = 
 
 # The MAX_INITIALIZER_LINES tag determines the maximum number of lines that the
 # initial value of a variable or macro / define can have for it to appear in the
@@ -668,29 +676,29 @@ ENABLED_SECTIONS       =
 # controlled using \showinitializer or \hideinitializer command in the
 # documentation regardless of this setting.
 # Minimum value: 0, maximum value: 10000, default value: 30.
-
-MAX_INITIALIZER_LINES  = 30
+#
+#MAX_INITIALIZER_LINES  = 30
 
 # Set the SHOW_USED_FILES tag to NO to disable the list of files generated at
 # the bottom of the documentation of classes and structs. If set to YES, the
 # list will mention the files that were used to generate the documentation.
 # The default value is: YES.
-
-SHOW_USED_FILES        = YES
+#
+#SHOW_USED_FILES        = YES
 
 # Set the SHOW_FILES tag to NO to disable the generation of the Files page. This
 # will remove the Files entry from the Quick Index and from the Folder Tree View
 # (if specified).
 # The default value is: YES.
-
-SHOW_FILES             = YES
+#
+#SHOW_FILES             = YES
 
 # Set the SHOW_NAMESPACES tag to NO to disable the generation of the Namespaces
 # page. This will remove the Namespaces entry from the Quick Index and from the
 # Folder Tree View (if specified).
 # The default value is: YES.
-
-SHOW_NAMESPACES        = YES
+#
+#SHOW_NAMESPACES        = YES
 
 # The FILE_VERSION_FILTER tag can be used to specify a program or script that
 # doxygen should invoke to get the current version for each file (typically from
@@ -712,8 +720,8 @@ FILE_VERSION_FILTER    =
 # Note that if you run doxygen from a directory containing a file called
 # DoxygenLayout.xml, doxygen will parse it automatically even if the LAYOUT_FILE
 # tag is left empty.
-
-LAYOUT_FILE            = 
+#
+#LAYOUT_FILE            = 
 
 # The CITE_BIB_FILES tag can be used to specify one or more bib files containing
 # the reference definitions. This must be a list of .bib files. The .bib
@@ -722,8 +730,8 @@ LAYOUT_FILE            =
 # For LaTeX the style of the bibliography can be controlled using
 # LATEX_BIB_STYLE. To use this feature you need bibtex and perl available in the
 # search path. See also \cite for info how to create references.
-
-CITE_BIB_FILES         = 
+#
+#CITE_BIB_FILES         = 
 
 #---------------------------------------------------------------------------
 # Configuration options related to warning and progress messages
@@ -733,8 +741,8 @@ CITE_BIB_FILES         =
 # standard output by doxygen. If QUIET is set to YES this implies that the
 # messages are off.
 # The default value is: NO.
-
-QUIET                  = NO
+#
+#QUIET                  = NO
 
 # The WARNINGS tag can be used to turn on/off the warning messages that are
 # generated to standard error (stderr) by doxygen. If WARNINGS is set to YES
@@ -742,37 +750,37 @@ QUIET                  = NO
 #
 # Tip: Turn warnings on while writing the documentation.
 # The default value is: YES.
-
-WARNINGS               = YES
+#
+#WARNINGS               = YES
 
 # If the WARN_IF_UNDOCUMENTED tag is set to YES then doxygen will generate
 # warnings for undocumented members. If EXTRACT_ALL is set to YES then this flag
 # will automatically be disabled.
 # The default value is: YES.
-
-WARN_IF_UNDOCUMENTED   = YES
+#
+#WARN_IF_UNDOCUMENTED   = YES
 
 # If the WARN_IF_DOC_ERROR tag is set to YES, doxygen will generate warnings for
 # potential errors in the documentation, such as not documenting some parameters
 # in a documented function, or documenting parameters that don't exist or using
 # markup commands wrongly.
 # The default value is: YES.
-
-WARN_IF_DOC_ERROR      = YES
+#
+#WARN_IF_DOC_ERROR      = YES
 
 # This WARN_NO_PARAMDOC option can be enabled to get warnings for functions that
 # are documented, but have no documentation for their parameters or return
 # value. If set to NO, doxygen will only warn about wrong or incomplete
 # parameter documentation, but not about the absence of documentation.
 # The default value is: NO.
-
-WARN_NO_PARAMDOC       = NO
+#
+#WARN_NO_PARAMDOC       = NO
 
 # If the WARN_AS_ERROR tag is set to YES then doxygen will immediately stop when
 # a warning is encountered.
 # The default value is: NO.
-
-WARN_AS_ERROR          = NO
+#
+#WARN_AS_ERROR          = NO
 
 # The WARN_FORMAT tag determines the format of the warning messages that doxygen
 # can produce. The string should contain the $file, $line, and $text tags, which
@@ -781,14 +789,14 @@ WARN_AS_ERROR          = NO
 # be replaced by the version of the file (if it could be obtained via
 # FILE_VERSION_FILTER)
 # The default value is: $file:$line: $text.
-
-WARN_FORMAT            = "$file:$line: $text"
+#
+#WARN_FORMAT            = "$file:$line: $text"
 
 # The WARN_LOGFILE tag can be used to specify a file to which warning and error
 # messages should be written. If left blank the output is written to standard
 # error (stderr).
-
-WARN_LOGFILE           = 
+#
+#WARN_LOGFILE           = 
 
 #---------------------------------------------------------------------------
 # Configuration options related to the input files
@@ -799,8 +807,8 @@ WARN_LOGFILE           =
 # directories like /usr/src/myproject. Separate the files or directories with
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
-
-INPUT                  = src/utils src/nsub
+#
+#INPUT                  = 
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -808,8 +816,8 @@ INPUT                  = src/utils src/nsub
 # documentation (see: http://www.gnu.org/software/libiconv) for the list of
 # possible encodings.
 # The default value is: UTF-8.
-
-INPUT_ENCODING         = UTF-8
+#
+#INPUT_ENCODING         = UTF-8
 
 # If the value of the INPUT tag contains directories, you can use the
 # FILE_PATTERNS tag to specify one or more wildcard patterns (like *.cpp and
@@ -824,14 +832,14 @@ INPUT_ENCODING         = UTF-8
 # *.hh, *.hxx, *.hpp, *.h++, *.cs, *.d, *.php, *.php4, *.php5, *.phtml, *.inc,
 # *.m, *.markdown, *.md, *.mm, *.dox, *.py, *.pyw, *.f90, *.f95, *.f03, *.f08,
 # *.f, *.for, *.tcl, *.vhd, *.vhdl, *.ucf and *.qsf.
-
-FILE_PATTERNS          = *.h
+#
+#FILE_PATTERNS          = 
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.
 # The default value is: NO.
 
-RECURSIVE              = NO
+RECURSIVE              = YES
 
 # The EXCLUDE tag can be used to specify files and/or directories that should be
 # excluded from the INPUT source files. This way you can easily exclude a
@@ -839,15 +847,15 @@ RECURSIVE              = NO
 #
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
-
-EXCLUDE                = 
+#
+#EXCLUDE                = 
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
 # from the input.
 # The default value is: NO.
-
-EXCLUDE_SYMLINKS       = NO
+#
+#EXCLUDE_SYMLINKS       = NO
 
 # If the value of the INPUT tag contains directories, you can use the
 # EXCLUDE_PATTERNS tag to specify one or more wildcard patterns to exclude
@@ -855,8 +863,8 @@ EXCLUDE_SYMLINKS       = NO
 #
 # Note that the wildcards are matched against the file with absolute path, so to
 # exclude all test directories for example use the pattern */test/*
-
-EXCLUDE_PATTERNS       = 
+#
+#EXCLUDE_PATTERNS       = 
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
 # (namespaces, classes, functions, etc.) that should be excluded from the
@@ -866,34 +874,34 @@ EXCLUDE_PATTERNS       =
 #
 # Note that the wildcards are matched against the file with absolute path, so to
 # exclude all test directories use the pattern */test/*
-
-EXCLUDE_SYMBOLS        = 
+#
+#EXCLUDE_SYMBOLS        = 
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or directories
 # that contain example code fragments that are included (see the \include
 # command).
-
-EXAMPLE_PATH           = 
+#
+#EXAMPLE_PATH           = 
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp and
 # *.h) to filter out the source-files in the directories. If left blank all
 # files are included.
-
-EXAMPLE_PATTERNS       = *
+#
+#EXAMPLE_PATTERNS       = *
 
 # If the EXAMPLE_RECURSIVE tag is set to YES then subdirectories will be
 # searched for input files to be used with the \include or \dontinclude commands
 # irrespective of the value of the RECURSIVE tag.
 # The default value is: NO.
-
-EXAMPLE_RECURSIVE      = NO
+#
+#EXAMPLE_RECURSIVE      = NO
 
 # The IMAGE_PATH tag can be used to specify one or more files or directories
 # that contain images that are to be included in the documentation (see the
 # \image command).
-
-IMAGE_PATH             = 
+#
+#IMAGE_PATH             = 
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program
@@ -913,8 +921,8 @@ IMAGE_PATH             =
 # Note that for custom extensions or not directly supported extensions you also
 # need to set EXTENSION_MAPPING for the extension otherwise the files are not
 # properly processed by doxygen.
-
-INPUT_FILTER           = 
+#
+#INPUT_FILTER           = 
 
 # The FILTER_PATTERNS tag can be used to specify filters on a per file pattern
 # basis. Doxygen will compare the file name with each pattern and apply the
@@ -1291,7 +1299,7 @@ DOCSET_PUBLISHER_NAME  = Publisher
 # The default value is: NO.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-GENERATE_HTMLHELP      = NO
+GENERATE_HTMLHELP      = YES
 
 # The CHM_FILE tag can be used to specify the file name of the resulting .chm
 # file. You can add a path in front of the file if the result should not be

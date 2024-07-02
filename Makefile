@@ -8,11 +8,13 @@ NAME   = nsub
 NAMES  = $(NAME) cutils
 TESTS  = 
 
+################################################################################
+
 # You may override these when calling make
 PREFIX = /usr/local
 dstdir = bin
 
-.PHONY: all build run clean mrpropre mrpropre love debug doc man \
+.PHONY: all build rebuild run clean mrpropre mrpropre love debug doc man \
 	test run-test run-test-more \
 	mess-build mess-run mess-clean mess-propre mess-doc mess-man \
 	mess-test mess-run-test mess-run-test-more \
@@ -22,17 +24,22 @@ all: build
 
 build: mess-build $(NAMES)
 
+rebuild: mess-rebuild $(NAMES)
+
 test: mess-test $(TESTS)
 
 # Main buildables
-M_OPTS=$(MAKECMDGOALS) --no-print-directory \
-	PREFIX=$(PREFIX) DEBUG=$(DEBUG) dstdir=$(abspath $(dstdir))
 $(NAMES) $(TESTS):
-	$(MAKE) -C src/$@ $(M_OPTS) 
+	$(MAKE) -C src/$@ $(MAKECMDGOALS) --no-print-directory \
+		PREFIX=$(PREFIX) DEBUG=$(DEBUG) dstdir=$(abspath $(dstdir))
 
 # Manual
 man: mess-man
 	@$(MAKE) -f man.d $(MAKECMDGOALS) NAME=$(NAME)
+
+# Doc
+doc: mess-doc
+	@$(MAKE) -f doc.d $(MAKECMDGOALS) NAME=$(NAME)
 
 # Run
 run: mess-run $(NAME)
@@ -41,20 +48,16 @@ run: mess-run $(NAME)
 run-test: mess-run-test $(TESTS)
 run-test-more: mess-run-test-more $(TESTS)
 
-# Doc/man/misc
-doc: mess-doc
-	doxygen
+# Misc
 love:
 	@echo " ...not war."
 debug:
 	$(MAKE) $(MAKECMDGOALS) PREFIX=$(PREFIX) NAME=$(NAME) DEBUG=1
 
 # Clean
-clean: mess-clean $(TESTS) $(NAMES)
+clean: mess-clean doc man $(TESTS) $(NAMES)
 mrproper: mrpropre
-mrpropre: mess-propre $(TESTS) $(NAMES) man
-	rm -rf doc/html doc/latex doc/man
-	rmdir doc 2>/dev/null || true
+mrpropre: mess-propre $(TESTS) $(NAMES) doc man
 
 # Install/uninstall
 install: mess-install $(NAMES) man
@@ -64,6 +67,9 @@ uninstall: mess-uninstall $(NAMES) man
 mess-build:
 	@echo
 	@echo ">>>>>>>>>> Building $(NAMES) in $(dstdir)..."
+mess-rebuild:
+	@echo
+	@echo ">>>>>>>>>> Reilding $(NAMES) in $(dstdir)..."
 mess-run:
 	@echo
 	@echo ">>>>>>>>>> Running $(NAME)..."
@@ -75,7 +81,7 @@ mess-propre:
 	@echo ">>>>>>>>>> Calling Mr Propre..."
 mess-doc:
 	@echo
-	@echo ">>>>>>>>>> Generating documentation for $(NAME)..."
+	@echo ">>>>>>>>>> Documentation of $(NAME): $(MAKECMDGOALS)..."
 mess-man:
 	@echo
 	@echo ">>>>>>>>>> Manual of $(NAME): $(MAKECMDGOALS)..."
