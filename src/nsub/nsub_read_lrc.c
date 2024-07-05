@@ -55,9 +55,9 @@ int nsub_read_lrc(song_t *song, char *line) {
 
 		{
 			lyric_t *lyric = array_last(song->lyrics);
-			if (lyric->type == NSUB_LYRIC)
+			if (lyric && lyric->type == NSUB_LYRIC)
 				lyric->stop = start;
-			if (lyric->type == NSUB_COMMENT)
+			if (lyric && lyric->type == NSUB_COMMENT)
 				name = lyric->text;
 
 			// Comments starting with "[" (or "-- [") should not be names

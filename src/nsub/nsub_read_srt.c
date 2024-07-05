@@ -41,10 +41,7 @@ int nsub_read_srt(song_t *song, char *line) {
 		return 1;
 
 	size_t count = array_count(song->lyrics);
-	lyric_t *lyric = NULL;
-	if (count)
-		lyric = array_get(song->lyrics, array_count(song->lyrics) - 1);
-
+	lyric_t *lyric = array_last(song->lyrics);
 	if (is_srt_id(line)) {
 		int new_count = atoi(line);
 		if (new_count != count + 1) {
