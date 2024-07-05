@@ -110,7 +110,7 @@ char *nsub_webvtt_time_str(int time, int show_sign) {
 	int s = ((time / 1000)) % 60;
 	int c = (time) % 1000;
 
-	char *time_str = malloc(12 * sizeof(char));
+	char *time_str = malloc(14 * sizeof(char));
 
 	if (h) {
 		sprintf(time_str, "%s%d:%02d:%02d.%03d", sign, h, m, s, c);
