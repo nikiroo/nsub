@@ -158,14 +158,18 @@ song_t *nsub_read(FILE *in, NSUB_FORMAT fmt) {
 	return song;
 }
 
-int nsub_write(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset) {
+int nsub_write(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset,
+		int add_offset, double conv) {
 	switch (fmt) {
 	case NSUB_FMT_LRC:
-		return nsub_write_lrc(out, song, fmt, apply_offset);
+		return nsub_write_lrc(out, song, fmt, apply_offset, 
+			add_offset, conv);
 	case NSUB_FMT_WEBVTT:
-		return nsub_write_webvtt(out, song, fmt, apply_offset);
+		return nsub_write_webvtt(out, song, fmt, apply_offset, 
+			add_offset, conv);
 	case NSUB_FMT_SRT:
-		return nsub_write_srt(out, song, fmt, apply_offset);
+		return nsub_write_srt(out, song, fmt, apply_offset, 
+			add_offset, conv);
 	default:
 		fprintf(stderr, "Unsupported write format %d\n", fmt);
 		return 0;
@@ -268,3 +272,14 @@ int nsub_is_timing(const char line[], char deci_sym, int max_deci) {
 
 	return 1;
 }
+
+int apply_conv(int time, double conv) {
+	// Just so we don't require -lm...
+	double tmp = time * conv;
+	double diff = tmp - (int)tmp;
+	
+	if (diff >= 0.5)
+		return (int)tmp + 1;
+	return (int)tmp;
+}
+

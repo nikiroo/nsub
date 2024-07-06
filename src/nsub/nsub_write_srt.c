@@ -25,12 +25,13 @@
 /* Declarations */
 
 char *nsub_srt_time_str(int time, int show_sign);
-void nsub_write_srt_lyric(FILE *out, lyric_t *lyric, int offset);
+void nsub_write_srt_lyric(FILE *out, lyric_t *lyric, int offset, double conv);
 
 /* Public */
 
-int nsub_write_srt(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset) {
-	int offset;
+int nsub_write_srt(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset,
+		int add_offset, double conv) {
+	int offset = add_offset;
 
 	// header: none
 
@@ -38,7 +39,7 @@ int nsub_write_srt(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset) {
 
 	// offset is not supported in SRT (so, always applied)
 	{
-		offset = song->offset;
+		offset += song->offset;
 	}
 
 	// other metas: none
@@ -46,7 +47,7 @@ int nsub_write_srt(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset) {
 	// lyrics
 	array_loop(song->lyrics, lyric, lyric_t)
 	{
-		nsub_write_srt_lyric(out, lyric, offset);
+		nsub_write_srt_lyric(out, lyric, offset, conv);
 	}
 
 	return 1;
@@ -54,7 +55,7 @@ int nsub_write_srt(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset) {
 
 /* Private */
 
-void nsub_write_srt_lyric(FILE *out, lyric_t *lyric, int offset) {
+void nsub_write_srt_lyric(FILE *out, lyric_t *lyric, int offset, double conv) {
 	if (lyric->type == NSUB_EMPTY) {
 		// not supported, ignored
 		return;
@@ -71,8 +72,12 @@ void nsub_write_srt_lyric(FILE *out, lyric_t *lyric, int offset) {
 	//if (lyric->name)
 	// not supported, ignored
 
-	char *start = nsub_srt_time_str(lyric->start + offset, 0);
-	char *stop = nsub_srt_time_str(lyric->stop + offset, 0);
+	char *start = nsub_srt_time_str(
+		apply_conv(lyric->start, conv) + offset, 
+	0);
+	char *stop = nsub_srt_time_str(
+		apply_conv(lyric->stop , conv) + offset, 
+	0);
 	fprintf(out, "%s --> %s\n%s\n\n", start, stop, lyric->text);
 	free(start);
 	free(stop);

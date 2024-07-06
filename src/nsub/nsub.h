@@ -181,6 +181,16 @@ int nsub_to_ms(const char line[], char deci_sym);
  */
 int nsub_is_timing(const char line[], char deci_sym, int max_deci);
 
+/**
+ * Apply a conversion ratio to the given time.
+ *
+ * @param time the initial time to compute from
+ * @param conv the conversion ratio to apply (i.e., 1 = no conversion)
+ *
+ * @return the converted time
+ */
+int apply_conv(int time, double conv);
+
 song_t *nsub_read(FILE *in, NSUB_FORMAT fmt);
 int nsub_read_lrc(song_t *song, char *line);
 int nsub_read_webvtt(song_t *song, char *line);
@@ -188,10 +198,14 @@ int nsub_read_srt(song_t *song, char *line);
 
 /* Write */
 
-int nsub_write(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset);
-int nsub_write_lrc(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset);
+// conv = time conversion ratio
+int nsub_write(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset,
+		int add_offset, double conv);
+int nsub_write_lrc(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset,
+		int add_offset, double conv);
 int nsub_write_webvtt(FILE *out, song_t *song, NSUB_FORMAT fmt,
-		int apply_offset);
-int nsub_write_srt(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset);
+		int apply_offset, int add_offset, double conv);
+int nsub_write_srt(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset,
+		int add_offset, double conv);
 
 #endif /* NSUB_H */

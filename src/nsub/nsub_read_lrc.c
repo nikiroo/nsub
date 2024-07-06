@@ -122,12 +122,14 @@ static int is_lrc_offset(char *line) {
 	if (*offset)
 		return 0;
 
-	// skip spaces then ':'
+	// skip spaces then ':', then spaces
 	while (*line == ' ')
 		line++;
 	if (*line && *line != ':')
 		return 0;
 	line++;
+	while (*line == ' ')
+		line++;
 
 	// allow sign
 	if (*line == '-' || *line == '+')
@@ -217,6 +219,7 @@ static int lrc_millisec(char *line) {
 		// skip [offset:
 		while (*line != ':')
 			line++;
+		line++;
 		while (*line == ' ')
 			line++;
 
@@ -232,8 +235,9 @@ static int lrc_millisec(char *line) {
 	} else {
 		/* should not happen! */
 		fprintf(stderr,
-				"Warning: called lrc_millisec with bad input [%s], ignoring...\n",
-				line);
+			"Warning: called lrc_millisec with bad input"
+			" [%s], ignoring...\n",
+		line);
 		return 0;
 	}
 

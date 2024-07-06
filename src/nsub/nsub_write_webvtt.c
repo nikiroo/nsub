@@ -24,13 +24,14 @@
 /* Declarations */
 
 char *nsub_webvtt_time_str(int time, int show_sign);
-void nsub_write_webvtt_lyric(FILE *out, lyric_t *lyric, int offset);
+void nsub_write_webvtt_lyric(FILE *out, lyric_t *lyric, int offset, 
+		double conv);
 
 /* Public */
 
 int nsub_write_webvtt(FILE *out, song_t *song, NSUB_FORMAT fmt,
-		int apply_offset) {
-	int offset;
+		int apply_offset, int add_offset, double conv) {
+	int offset = add_offset;
 
 	// header
 	{
@@ -49,7 +50,7 @@ int nsub_write_webvtt(FILE *out, song_t *song, NSUB_FORMAT fmt,
 
 	// offset is not supported in WebVTT (so, always applied)
 	{
-		offset = song->offset;
+		offset += song->offset;
 	}
 
 	// other metas
@@ -62,7 +63,7 @@ int nsub_write_webvtt(FILE *out, song_t *song, NSUB_FORMAT fmt,
 	// lyrics
 	array_loop(song->lyrics, lyric, lyric_t)
 	{
-		nsub_write_webvtt_lyric(out, lyric, offset);
+		nsub_write_webvtt_lyric(out, lyric, offset, conv);
 	}
 
 	return 1;
@@ -70,7 +71,8 @@ int nsub_write_webvtt(FILE *out, song_t *song, NSUB_FORMAT fmt,
 
 /* Private */
 
-void nsub_write_webvtt_lyric(FILE *out, lyric_t *lyric, int offset) {
+void nsub_write_webvtt_lyric(FILE *out, lyric_t *lyric, int offset, 
+		double conv) {
 	if (lyric->type == NSUB_EMPTY) {
 		fprintf(out, "\n\n");
 		return;
@@ -87,9 +89,13 @@ void nsub_write_webvtt_lyric(FILE *out, lyric_t *lyric, int offset) {
 	// Not always supported by clients, so disabled:
 	// if (lyric->name)
 	//fprintf(out, "%s\n", lyric->name);
-
-	char *start = nsub_webvtt_time_str(lyric->start + offset, 0);
-	char *stop = nsub_webvtt_time_str(lyric->stop + offset, 0);
+	
+	char *start = nsub_webvtt_time_str(
+		apply_conv(lyric->start, conv) + offset, 
+	0);
+	char *stop = nsub_webvtt_time_str(
+		apply_conv(lyric->stop , conv) + offset, 
+	0);
 	fprintf(out, "%s --> %s\n%s\n\n", start, stop, lyric->text);
 	free(start);
 	free(stop);

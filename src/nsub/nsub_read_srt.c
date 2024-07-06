@@ -46,8 +46,10 @@ int nsub_read_srt(song_t *song, char *line) {
 		int new_count = atoi(line);
 		if (new_count != count + 1) {
 			fprintf(stderr,
-					"Warning: line %zu is out of order (it is numbered %i), ignoring order...\n",
-					count, new_count);
+				"Warning: line %zu is out of order "
+				"(it is numbered %i), ignoring order...\n",
+				count, new_count
+			);
 		}
 
 		song_add_lyric(song, 0, 0, NULL, NULL);
@@ -164,8 +166,10 @@ static int get_start(char *line) {
 	if (!is_srt_timing(line)) {
 		/* should not happen! */
 		fprintf(stderr,
-				"Warning: called get_start with bad input [%s], ignoring...\n",
-				line);
+			"Warning: called get_start with bad input "
+			"[%s], ignoring...\n",
+			line
+		);
 		return 0;
 	}
 
@@ -190,8 +194,10 @@ static int get_stop(char *line) {
 	if (!is_srt_timing(line)) {
 		/* should not happen! */
 		fprintf(stderr,
-				"Warning: called get_stop with bad input [%s], ignoring...\n",
-				line);
+			"Warning: called get_stop with bad input "
+			"[%s], ignoring...\n",
+			line
+		);
 		return 0;
 	}
 

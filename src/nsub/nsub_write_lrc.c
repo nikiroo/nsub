@@ -25,12 +25,13 @@
 /* Declarations */
 
 char *nsub_lrc_time_str(int time, int show_sign);
-void nsub_write_lrc_lyric(FILE *out, lyric_t *lyric, int offset);
+void nsub_write_lrc_lyric(FILE *out, lyric_t *lyric, int offset, double conv);
 
 /* Public */
 
-int nsub_write_lrc(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset) {
-	int offset;
+int nsub_write_lrc(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset,
+		int add_offset, double conv) {
+	int offset = add_offset;
 
 	// header: none
 
@@ -44,10 +45,9 @@ int nsub_write_lrc(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset) {
 	{
 		char *offset_str;
 		if (apply_offset) {
-			offset = song->offset;
+			offset += song->offset;
 			offset_str = nsub_lrc_time_str(0, 1);
 		} else {
-			offset = 0;
 			offset_str = nsub_lrc_time_str(song->offset, 1);
 		}
 		fprintf(out, "[offset: %s]\n", offset_str);
@@ -64,7 +64,7 @@ int nsub_write_lrc(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset) {
 	// lyrics
 	array_loop(song->lyrics, lyric, lyric_t)
 	{
-		nsub_write_lrc_lyric(out, lyric, offset);
+		nsub_write_lrc_lyric(out, lyric, offset, conv);
 	}
 
 	return 1;
@@ -72,19 +72,11 @@ int nsub_write_lrc(FILE *out, song_t *song, NSUB_FORMAT fmt, int apply_offset) {
 
 /* Private */
 
-void nsub_write_lrc_lyric(FILE *out, lyric_t *lyric, int offset) {
+void nsub_write_lrc_lyric(FILE *out, lyric_t *lyric, int offset, double conv) {
 	static int lrc_last_stop = 0;
 
 	if (lyric->type == NSUB_EMPTY) {
-		if (lrc_last_stop) {
-			char *time = nsub_lrc_time_str(lrc_last_stop, 0);
-			fprintf(out, "[%s]\n", time);
-			free(time);
-		} else {
-			fprintf(out, "\n");
-		}
-
-		lrc_last_stop = 0;
+		fprintf(out, "\n");
 		return;
 	}
 
@@ -95,11 +87,20 @@ void nsub_write_lrc_lyric(FILE *out, lyric_t *lyric, int offset) {
 		}
 
 		fprintf(out, "-- %s\n", tmp->string);
-		lrc_last_stop = 0;
 
 		free_cstring(tmp);
 		return;
 	}
+	
+	int start_time = apply_conv(lyric->start, conv) + offset;
+	if (lrc_last_stop && lrc_last_stop != start_time) {
+		char *time = nsub_lrc_time_str(lrc_last_stop, 0);
+		fprintf(out, "[%s]\n", time);
+		fprintf(out, "\n");
+		free(time);
+		lrc_last_stop = 0;
+	}
+	
 
 	if (lyric->name) {
 		cstring_t *tmp = cstring_clone(lyric->name);
@@ -111,8 +112,8 @@ void nsub_write_lrc_lyric(FILE *out, lyric_t *lyric, int offset) {
 
 		free_cstring(tmp);
 	}
-
-	char *time = nsub_lrc_time_str(lyric->start + offset, 0);
+	
+	char *time = nsub_lrc_time_str(start_time, 0);
 	cstring_t *tmp = cstring_clone(lyric->text);
 	if (tmp) {
 		cstring_replace(tmp, "\n", "\\n");
@@ -121,7 +122,7 @@ void nsub_write_lrc_lyric(FILE *out, lyric_t *lyric, int offset) {
 	free(time);
 	free_cstring(tmp);
 
-	lrc_last_stop = lyric->stop + offset;
+	lrc_last_stop = apply_conv(lyric->stop, conv) + offset;
 }
 
 char *nsub_lrc_time_str(int time, int show_sign) {
